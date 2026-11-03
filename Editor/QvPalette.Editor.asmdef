@@ -1,0 +1,30 @@
+{
+    "name": "QvPalette.Editor",
+    "rootNamespace": "Yakigura.QvPalette.Editor",
+    "references": [
+        "QvPalette",
+        "Yakigura.QvInkPreview.Runtime",
+        "Yakigura.QvInkPreview.Editor",
+        "QvPen",
+        "UdonSharp.Runtime",
+        "UdonSharp.Editor",
+        "VRC.Udon",
+        "VRC.Udon.Editor",
+        "VRC.SDKBase",
+        "VRC.SDKBase.Editor",
+        "VRC.SDK3",
+        "VRC.SDK3.Editor",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

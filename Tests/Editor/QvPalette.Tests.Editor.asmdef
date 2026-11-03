@@ -1,0 +1,23 @@
+{
+    "name": "QvPalette.Tests.Editor",
+    "rootNamespace": "Yakigura.QvPalette.Tests",
+    "references": [
+        "QvPalette",
+        "UdonSharp.Runtime",
+        "QvPalette.Editor",
+        "Yakigura.QvInkPreview.Runtime",
+        "Yakigura.QvInkPreview.Editor",
+        "QvPen",
+        "Unity.TextMeshPro"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ]
+}

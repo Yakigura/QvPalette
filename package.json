@@ -1,0 +1,27 @@
+{
+  "name": "com.yakigura.qvpalette",
+  "displayName": "QvPalette",
+  "version": "0.1.0",
+  "unity": "2022.3",
+  "description": "QvPen の非公式拡張。ペン 1 本で最大 1024 色・256 段階の太さを同期するインクパレット。",
+  "author": {
+    "name": "やきたてぐらふてぃ",
+    "url": "https://github.com/Yakigura"
+  },
+  "vpmDependencies": {
+    "com.vrchat.worlds": "^3.5.0",
+    "com.vrchat.base": "^3.5.0",
+    "net.ureishi.qvpen": ">=3.3.15 <3.4.0",
+    "com.yakigura.qvinkpreview": "^0.1.0"
+  },
+  "keywords": [
+    "VRChat",
+    "UdonSharp",
+    "QvPen",
+    "Palette"
+  ],
+  "documentationUrl": "https://github.com/Yakigura/QvPalette#readme",
+  "changelogUrl": "https://github.com/Yakigura/QvPalette/blob/main/CHANGELOG.md",
+  "licensesUrl": "https://github.com/Yakigura/QvPalette/blob/main/LICENSE",
+  "url": "https://github.com/Yakigura/QvPalette/releases/download/0.1.0/com.yakigura.qvpalette-0.1.0.zip"
+}
