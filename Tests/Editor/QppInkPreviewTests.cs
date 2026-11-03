@@ -72,10 +72,10 @@ namespace Yakigura.QvPalette.Tests.Editor
             const float max = QppCommon.WIDTH_MAX;
             Assert.That(QppInkPreviewLogic.WidthOf(0, min, max), Is.EqualTo(0.003f).Within(0.000001f));
             Assert.That(QppInkPreviewLogic.WidthOf(QppCommon.MAX_WIDTH_INDEX, min, max),
-                Is.EqualTo(0.1f).Within(0.000001f));
+                Is.EqualTo(0.15f).Within(0.000001f));
             Assert.That(QppInkPreviewLogic.WidthOf(-1, min, max), Is.EqualTo(0.003f).Within(0.000001f));
             Assert.That(QppInkPreviewLogic.WidthOf(QppCommon.MAX_WIDTH_INDEX + 1, min, max),
-                Is.EqualTo(0.1f).Within(0.000001f));
+                Is.EqualTo(0.15f).Within(0.000001f));
         }
 
         [Test]

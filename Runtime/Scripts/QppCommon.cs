@@ -10,9 +10,9 @@ namespace Yakigura.QvPalette
         public const int WIDTH_STEPS = 1024;
         public const int MAX_WIDTH_INDEX = WIDTH_STEPS - 1;
         public const float WIDTH_MIN = 0.003f;
-        public const float WIDTH_MAX = 0.1f;
-        // 約 5mm（IndexOfWidth(0.005) = 149）
-        public const int DEFAULT_WIDTH_INDEX = 149;
+        public const float WIDTH_MAX = 0.15f;
+        // 約 5mm（IndexOfWidth(0.005) = 134）
+        public const int DEFAULT_WIDTH_INDEX = 134;
 
         public static float WidthOf(int index)
         {

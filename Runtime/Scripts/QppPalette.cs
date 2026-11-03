@@ -39,7 +39,7 @@ namespace Yakigura.QvPalette
         [Tooltip("太さスライダーの左端（いちばん細い）。")]
         [SerializeField] private float inkWidthMinMillimeters = 3f;
         [Tooltip("太さスライダーの右端（いちばん太い）。")]
-        [SerializeField] private float inkWidthMaxMillimeters = 100f;
+        [SerializeField] private float inkWidthMaxMillimeters = 150f;
         [Tooltip("最初に持ったときの太さ。最小〜最大の範囲に収める。")]
         [SerializeField] private float defaultInkWidthMillimeters = 5f;
 
@@ -253,6 +253,10 @@ namespace Yakigura.QvPalette
         }
 
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
+        public float EditorInkWidthMinMillimeters => inkWidthMinMillimeters;
+        public float EditorInkWidthMaxMillimeters => inkWidthMaxMillimeters;
+        public float EditorInkWidthDefaultMillimeters => defaultInkWidthMillimeters;
+
         public void EditorSetInkWidthRange(float minMm, float maxMm, float defaultMm)
         {
             inkWidthMinMillimeters = minMm;

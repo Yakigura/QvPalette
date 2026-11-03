@@ -759,6 +759,13 @@ namespace Yakigura.QvPalette.Editor
 
             Transform paletteTr = GetOrCreateChild(qppRoot.transform, "Palette");
             var palette = GetOrAddComponent<QppPalette>(paletteTr.gameObject);
+            // 旧い既定（最大 100 mm）のままのシーンは、新しい既定（150 mm）に上げる。ほかの値は、利用者の設定として残す。
+            if (Mathf.Approximately(palette.EditorInkWidthMaxMillimeters, 100f))
+            {
+                Undo.RecordObject(palette, "QvPalette ink width max");
+                palette.EditorSetInkWidthRange(palette.EditorInkWidthMinMillimeters, 150f, palette.EditorInkWidthDefaultMillimeters);
+                EditorUtility.SetDirty(palette);
+            }
 
             Transform observerTr = GetOrCreateChild(qppRoot.transform, "Observer");
             var observer = GetOrAddComponent<QppInkObserver>(observerTr.gameObject);
