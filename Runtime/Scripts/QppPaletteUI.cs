@@ -1076,11 +1076,10 @@ namespace Yakigura.QvPalette
 
         public void _PrevPage()
         {
-            if (currentPage > 0)
-            {
-                currentPage--;
-                RefreshUI();
-            }
+            if (!Utilities.IsValid(palette)) return;
+            // 1 ページ目で戻ると、最後のページへ（次へ送るときの、最後 → 1 ページ目と対になる）。
+            currentPage = currentPage > 0 ? currentPage - 1 : PageCount() - 1;
+            RefreshUI();
         }
 
         public void _TogglePin()
