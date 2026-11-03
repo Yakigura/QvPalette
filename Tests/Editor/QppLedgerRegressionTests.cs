@@ -18,6 +18,35 @@ namespace Yakigura.QvPalette.Tests
         }
 
         [Test]
+        public void StyleIdsUpTo4095SurviveThePackedLedgerValue()
+        {
+            QppLedgerChunk chunk = Add<QppLedgerChunk>();
+            chunk.EditorSetReferences(16, null, 0);
+            chunk.Seed(128);
+            chunk._Append(10, 1023, 1023);
+            chunk._Append(20, 1024, 5);
+            chunk._Append(30, 4095, 1000);
+
+            QppPenState state = Add<QppPenState>();
+            SetField(state, "syncedEpoch", 1);
+            SetField(state, "syncedFromInkId", 30);
+            SetField(state, "syncedLedgerTotal", 4);
+
+            QppPenLedger ledger = Add<QppPenLedger>();
+            ledger.EditorSetReferences(new[] { chunk }, state, null, 0, 128);
+
+            Assert.IsTrue(ledger.TryResolve(15, out int style1, out int width1));
+            Assert.AreEqual(1023, style1);
+            Assert.AreEqual(1023, width1);
+            Assert.IsTrue(ledger.TryResolve(25, out int style2, out int width2));
+            Assert.AreEqual(1024, style2);
+            Assert.AreEqual(5, width2);
+            Assert.IsTrue(ledger.TryResolve(35, out int style3, out int width3));
+            Assert.AreEqual(4095, style3);
+            Assert.AreEqual(1000, width3);
+        }
+
+        [Test]
         public void LateJoinerWaitsForCurrentRecordThenResolvesHistoricalStyle()
         {
             QppLedgerChunk chunk = Add<QppLedgerChunk>();

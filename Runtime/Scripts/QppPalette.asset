@@ -335,7 +335,7 @@ MonoBehaviour:
       Data: 21|UnityEngine.HeaderAttribute, UnityEngine.CoreModule
     - Name: header
       Entry: 1
-      Data: Entries (Max 1024)
+      Data: Entries (Max 4096)
     - Name: 
       Entry: 8
       Data: 

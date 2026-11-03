@@ -1327,7 +1327,7 @@ namespace Yakigura.QvPalette.Editor
                 swatchButtons[i] = sb;
             }
 
-            // お気に入り 8 スロット（§8）。1024 色を実用的にするための必須の相方。
+            // お気に入り 8 スロット（§8）。大量の色を実用的にするための必須の相方。
             Transform favRoot = GetOrCreateChild(displayRoot, "Favorites");
             favRoot.localPosition = new Vector3(LeftColumnX, FavoritesCenterY, 0f);
 

@@ -389,7 +389,7 @@ namespace Yakigura.QvPalette
                         int pk;
                         if (cc.TryFindRecord(inkId, out pk))
                         {
-                            styleId = (pk >> 10) & 0x03FF;
+                            styleId = (pk >> 10) & 0x0FFF;
                             widthIndex = pk & 0x03FF;
                             return true;
                         }
@@ -406,7 +406,7 @@ namespace Yakigura.QvPalette
 
                 int packed;
                 if (!ch.TryFindRecord(inkId, out packed)) continue;
-                styleId = (packed >> 10) & 0x03FF;
+                styleId = (packed >> 10) & 0x0FFF;
                 widthIndex = packed & 0x03FF;
                 lastHitChunk = c;
                 return true;

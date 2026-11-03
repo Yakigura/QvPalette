@@ -446,7 +446,7 @@ namespace Yakigura.QvPalette.Editor
 
         private void DrawElement(Rect rect, int viewIndex, bool isActive, bool isFocused)
         {
-            // 見えていない行は描かない（1024 個でも重くならないように）。
+            // 見えていない行は描かない（4096 個でも重くならないように）。
             if (rect.yMax < scrollPos.y - OutlinedElementHeight ||
                 rect.y > scrollPos.y + scrollViewHeight + OutlinedElementHeight) return;
             if (viewIndex >= view.Count) return;

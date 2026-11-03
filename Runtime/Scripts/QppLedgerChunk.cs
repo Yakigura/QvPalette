@@ -56,12 +56,12 @@ namespace Yakigura.QvPalette
             // In-place update if same fromInkId (prevents duplicate keys and preserves order)
             if (count > 0 && keys[count - 1] == fromInkId)
             {
-                vals[count - 1] = ((styleId & 0x03FF) << 10) | (widthIndex & 0x03FF);
+                vals[count - 1] = ((styleId & 0x0FFF) << 10) | (widthIndex & 0x03FF);
                 return;
             }
 
             keys[count] = fromInkId;
-            vals[count] = ((styleId & 0x03FF) << 10) | (widthIndex & 0x03FF);
+            vals[count] = ((styleId & 0x0FFF) << 10) | (widthIndex & 0x03FF);
             count++;
         }
 

@@ -48,7 +48,7 @@ namespace Yakigura.QvPalette.Editor
     /// <summary>インク一覧の読み書き、ファイル入出力、QvPen からの取り込み。</summary>
     public static class QppInkData
     {
-        public const int MaxInks = 1024;
+        public const int MaxInks = 4096;
         public const string FileExtension = "json";
         private const string FileFormat = "QvPenPalettePlus.Inks";
 

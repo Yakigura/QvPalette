@@ -13,7 +13,7 @@ namespace Yakigura.QvPalette
         [SerializeField] private bool[] materialRounded;
         [SerializeField] private bool allowRoundedOnQuest = false;
 
-        [Header("Entries (Max 1024)")]
+        [Header("Entries (Max 4096)")]
         [SerializeField] private int[] entryMaterialIndex;
         [SerializeField] private Color[] entryColor;
         [SerializeField] private int[] entryGradientIndex;
