@@ -28,7 +28,11 @@ namespace Yakigura.QvPalette
         [SerializeField] private QppWidthSlider widthSlider;
         [SerializeField] private QppWidthPresetButton[] widthPresetButtons;
         [Tooltip("太さプリセットの値（mm）。スライドに加えて固定値へ一発で切り替える。")]
-        [SerializeField] private float[] widthPresetMillimeters = new float[] { 3f, 5f, 10f, 30f };
+        [SerializeField] private float[] widthPresetMillimeters = new float[] { 3f, 5f, 10f, 30f, 50f, 80f, 100f, 150f };
+        [Tooltip("太さプリセットのページを切り替えるボタン（1 ページ 4 個）。")]
+        [SerializeField] private QppControlButton presetPageButton;
+        [Tooltip("タグのページを切り替えるボタン（1 ページ 9 個）。")]
+        [SerializeField] private QppControlButton tagPageButton;
         [SerializeField] private TextMeshPro pageText;
         [SerializeField] private TextMeshProUGUI pageTextUGUI;
         [SerializeField] private TextMeshPro widthText;
@@ -85,6 +89,9 @@ namespace Yakigura.QvPalette
 
         // タグ絞り込み（ローカルのみ）。filteredStyles に表示する styleId を並べ、16 個ずつページにする。
         private int activeTag = -1;
+        private int tagPage = 0;
+        private int presetPage = 0;
+        private const int PRESETS_PER_PAGE = 4;
         private int[] filteredStyles;
         private int filteredCount;
         private bool filterBuilt;
@@ -628,6 +635,7 @@ namespace Yakigura.QvPalette
         {
             if (!CanChangeActivePen()) return;
             if (widthPresetMillimeters == null) return;
+            presetIndex += presetPage * PRESETS_PER_PAGE;
             if (presetIndex < 0 || presetIndex >= widthPresetMillimeters.Length) return;
 
             int widthIndex = WidthIndexOfMillimeters(widthPresetMillimeters[presetIndex]);
@@ -645,17 +653,48 @@ namespace Yakigura.QvPalette
             return Utilities.IsValid(palette) ? palette.MillimetersTextOf(widthIndex) : QppCommon.MillimetersTextOf(widthIndex);
         }
 
+        private int PresetPageCount()
+        {
+            if (widthPresetMillimeters == null) return 1;
+            return Mathf.Max(1, (widthPresetMillimeters.Length + PRESETS_PER_PAGE - 1) / PRESETS_PER_PAGE);
+        }
+
+        /// <summary>太さプリセットのページを、次へ（最後の次は 1 ページ目）。</summary>
+        public void _NextPresetPage()
+        {
+            presetPage = (presetPage + 1) % PresetPageCount();
+            RefreshWidthPresets();
+        }
+
         private void RefreshWidthPresets()
         {
             if (widthPresetButtons == null || widthPresetMillimeters == null) return;
+
+            int presetPages = PresetPageCount();
+            if (presetPage >= presetPages) presetPage = 0;
+            if (Utilities.IsValid(presetPageButton))
+            {
+                bool showPresetPage = presetPages > 1;
+                if (presetPageButton.gameObject.activeSelf != showPresetPage) presetPageButton.gameObject.SetActive(showPresetPage);
+                if (showPresetPage)
+                {
+                    presetPageButton.SetLabel((presetPage + 1) + "/" + presetPages, tagColor);
+                    presetPageButton.SetBackgroundColor(tagPlateColor);
+                }
+            }
 
             for (int i = 0; i < widthPresetButtons.Length; i++)
             {
                 var pb = widthPresetButtons[i];
                 if (!Utilities.IsValid(pb)) continue;
 
-                int idx = pb.PresetIndex;
-                if (idx < 0 || idx >= widthPresetMillimeters.Length) continue;
+                int idx = pb.PresetIndex + presetPage * PRESETS_PER_PAGE;
+                if (pb.PresetIndex < 0 || idx >= widthPresetMillimeters.Length)
+                {
+                    if (pb.gameObject.activeSelf) pb.gameObject.SetActive(false);
+                    continue;
+                }
+                if (!pb.gameObject.activeSelf) pb.gameObject.SetActive(true);
 
                 int widthIndex = WidthIndexOfMillimeters(widthPresetMillimeters[idx]);
                 // ボタンには決めた値をそのまま出す（太さは段階で持つので、ごくわずかに違うことがある）。
@@ -1339,7 +1378,7 @@ namespace Yakigura.QvPalette
         /// <summary>タグボタン index（0 = すべて）。同じタグをもう一度押すと「すべて」に戻る。</summary>
         public void _SelectTagButton(int index)
         {
-            int tag = index - 1;
+            int tag = index > 0 ? tagPage * QppPalette.TAGS_PER_PAGE + index - 1 : -1;
             if (tag == activeTag || index <= 0) tag = -1;
             if (Utilities.IsValid(palette) && tag >= palette.TagCount) return;
 
@@ -1362,21 +1401,47 @@ namespace Yakigura.QvPalette
         public void _OnTagButton8() { _SelectTagButton(8); }
         public void _OnTagButton9() { _SelectTagButton(9); }
 
+        private int TagPageCount()
+        {
+            int count = Utilities.IsValid(palette) ? palette.TagCount : 0;
+            return Mathf.Max(1, (count + QppPalette.TAGS_PER_PAGE - 1) / QppPalette.TAGS_PER_PAGE);
+        }
+
+        /// <summary>タグのページを、次へ（最後の次は 1 ページ目）。選んでいるタグはそのまま。</summary>
+        public void _NextTagPage()
+        {
+            tagPage = (tagPage + 1) % TagPageCount();
+            RefreshTagButtons();
+        }
+
         private void RefreshTagButtons()
         {
             if (tagButtons == null) return;
             int tagCount = Utilities.IsValid(palette) ? palette.TagCount : 0;
+            int tagPages = TagPageCount();
+            if (tagPage >= tagPages) tagPage = 0;
+            if (Utilities.IsValid(tagPageButton))
+            {
+                bool showTagPage = tagPages > 1;
+                if (tagPageButton.gameObject.activeSelf != showTagPage) tagPageButton.gameObject.SetActive(showTagPage);
+                if (showTagPage)
+                {
+                    tagPageButton.SetLabel("タグ " + (tagPage + 1) + "/" + tagPages + " →", tagColor);
+                    tagPageButton.SetBackgroundColor(tagPlateColor);
+                }
+            }
             for (int i = 0; i < tagButtons.Length; i++)
             {
                 var b = tagButtons[i];
                 if (!Utilities.IsValid(b)) continue;
 
-                bool visible = i == 0 ? tagCount > 0 : i - 1 < tagCount;
+                int tagIndex = i - 1 + tagPage * QppPalette.TAGS_PER_PAGE;
+                bool visible = i == 0 ? tagCount > 0 : tagIndex < tagCount;
                 if (b.gameObject.activeSelf != visible) b.gameObject.SetActive(visible);
                 if (!visible) continue;
 
-                bool active = (i == 0 && activeTag < 0) || (i > 0 && activeTag == i - 1);
-                string text = i == 0 ? "すべて" : palette.TagNameOf(i - 1);
+                bool active = (i == 0 && activeTag < 0) || (i > 0 && activeTag == tagIndex);
+                string text = i == 0 ? "すべて" : palette.TagNameOf(tagIndex);
                 b.SetLabel(active ? "● " + text : text, active ? tagActiveColor : tagColor);
                 b.SetBackgroundColor(active ? tagActivePlateColor : tagPlateColor);
             }
@@ -1424,9 +1489,13 @@ namespace Yakigura.QvPalette
             GameObject full = null,
             Transform focus = null,
             QppControlButton[] tButtons = null,
-            ParticleSystem effect = null)
+            ParticleSystem effect = null,
+            QppControlButton presetPageBtn = null,
+            QppControlButton tagPageBtn = null)
         {
             tagButtons = tButtons;
+            presetPageButton = presetPageBtn;
+            tagPageButton = tagPageBtn;
             openEffect = effect;
             filterBuilt = false;
             fullIndicator = full;
@@ -1454,6 +1523,16 @@ namespace Yakigura.QvPalette
             controlButtons = cButtons;
             panelOpacity = 0.35f;
             inactiveOpacity = 0.15f;
+        }
+
+        /// <summary>太さプリセットの値を、4 個ずつ 2 ページ分にそろえる。既存の先頭 4 個（利用者が変えた値）は残す。</summary>
+        public void EditorEnsureWidthPresets()
+        {
+            float[] defaults = new float[] { 3f, 5f, 10f, 30f, 50f, 80f, 100f, 150f };
+            var values = new float[defaults.Length];
+            for (int i = 0; i < defaults.Length; i++)
+                values[i] = (widthPresetMillimeters != null && i < widthPresetMillimeters.Length) ? widthPresetMillimeters[i] : defaults[i];
+            widthPresetMillimeters = values;
         }
 
         public void EditorSetPaletteTool(QppPaletteTool pTool)

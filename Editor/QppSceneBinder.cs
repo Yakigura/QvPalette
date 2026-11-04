@@ -52,7 +52,7 @@ namespace Yakigura.QvPalette.Editor
         private const float TagColumnStepX = 0.08f;
         private const float TagRowTopY = 0.1f;
         private const float TagRowStepY = 0.05f;
-        private const int TagButtonCount = QppPalette.MAX_TAGS + 1;
+        private const int TagButtonCount = QppPalette.TAGS_PER_PAGE + 1;
         private const float GridCenterY = 0f;
         // 左列は上から「ペンの大きさ（あまり変えない）→ 線の太さ → お気に入り」。
         private const float FavoritesCenterY = -0.15f;
@@ -1502,9 +1502,10 @@ namespace Yakigura.QvPalette.Editor
             float[] presetMm = new float[] { 3f, 5f, 10f, 30f };
             var presetButtons = new QppWidthPresetButton[presetMm.Length];
             // 各ボタンに、そのプリセットの太さの線見本（上）と mm 表記（下）を出す。
-            float presetStartX = -0.0975f;
-            float presetStepX = 0.065f;
-            Vector2 presetRectSize = new Vector2(0.06f, 0.06f);
+            // 右端に、ページ切り替えのボタンを置くので、少し詰める。
+            float presetStartX = -0.112f;
+            float presetStepX = 0.056f;
+            Vector2 presetRectSize = new Vector2(0.052f, 0.06f);
 
             for (int i = 0; i < presetMm.Length; i++)
             {
@@ -1851,6 +1852,17 @@ namespace Yakigura.QvPalette.Editor
                 tagButtonList[i] = cb;
             }
 
+            // ページ切り替えのボタン（太さプリセット 1/2、タグ）。ページが 1 つだけのときは、UI が隠す。
+            QppControlButton presetPageButton = CreatePageButton(
+                displayRoot, "Btn_PresetPage", ui, "_NextPresetPage",
+                new Vector2(LeftColumnX + 0.112f, PresetCenterY), new Vector2(0.05f, 0.042f), "1/2",
+                tagPlateMat, touchColliders, dimTexts, controlButtonsList);
+            QppControlButton tagPageButton = CreatePageButton(
+                displayRoot, "Btn_TagPage", ui, "_NextTagPage",
+                new Vector2(TagColumnX + TagColumnStepX * 0.5f, -0.15f), new Vector2(0.154f, 0.036f), "タグ 1/3 →",
+                tagPlateMat, touchColliders, dimTexts, controlButtonsList);
+            ui.EditorEnsureWidthPresets();
+
             // Remove the obsolete angle button when rebinding an existing panel.
             Transform obsoleteTiltButton = displayRoot.Find("Btn_Tilt");
             if (obsoleteTiltButton != null)
@@ -1880,7 +1892,9 @@ namespace Yakigura.QvPalette.Editor
                 fullGO,
                 focusTr,
                 tagButtonList,
-                openEffect);
+                openEffect,
+                presetPageButton,
+                tagPageButton);
 
             // Default hide the panel contents until the local player picks up the pen.
             // 入れ物（Panel_{slot}）はアクティブのまま残す。
@@ -2301,6 +2315,40 @@ namespace Yakigura.QvPalette.Editor
         }
 
         /// <summary>ボタンの下地（文字の少し奥に置く板）。当たり判定は持たせない。</summary>
+        private static QppControlButton CreatePageButton(
+            Transform displayRoot, string name, QppPaletteUI ui, string eventName,
+            Vector2 center, Vector2 size, string text, Material plateMat,
+            List<Collider> touchColliders, List<TextMeshPro> dimTexts, List<QppControlButton> controlButtonsList)
+        {
+            Transform tr = GetOrCreateChild(displayRoot, name);
+            tr.localPosition = new Vector3(center.x, center.y, 0f);
+
+            var col = tr.GetComponent<BoxCollider>();
+            if (col == null) col = tr.gameObject.AddComponent<BoxCollider>();
+            col.size = new Vector3(size.x, size.y, 0.02f);
+            col.isTrigger = true;
+            touchColliders.Add(col);
+
+            Transform lblTr = GetOrCreateChild(tr, "Label");
+            lblTr.localPosition = Vector3.zero;
+            lblTr.localScale = Vector3.one * 0.0048f;
+            var lblTmp = lblTr.GetComponent<TextMeshPro>();
+            if (lblTmp == null) lblTmp = lblTr.gameObject.AddComponent<TextMeshPro>();
+            lblTmp.fontSize = 20;
+            lblTmp.alignment = TextAlignmentOptions.Center;
+            lblTmp.enableWordWrapping = false;
+            lblTmp.text = text;
+            lblTmp.color = new Color(0.95f, 0.95f, 1f);
+            dimTexts.Add(lblTmp);
+
+            Renderer plate = EnsureButtonPlate(tr, size - new Vector2(0.004f, 0.006f), plateMat);
+            var cb = GetOrAddComponent<QppControlButton>(tr.gameObject);
+            cb.EditorSetReferences(lblTmp, col, ui, eventName, center, size);
+            cb.EditorSetBackground(plate);
+            controlButtonsList.Add(cb);
+            return cb;
+        }
+
         private static Renderer EnsureButtonPlate(Transform button, Vector2 size, Material mat)
         {
             Transform plate = button.Find("Plate");
@@ -2517,7 +2565,12 @@ namespace Yakigura.QvPalette.Editor
 
         private static void RestorePanelUiSettings(QppPaletteUI ui, string savedJson)
         {
-            if (ui == null || string.IsNullOrEmpty(savedJson)) return;
+            if (ui == null) return;
+            if (string.IsNullOrEmpty(savedJson))
+            {
+                EnsurePresetPages(ui);
+                return;
+            }
 
             // 参照は作り直した側が正しいので、調整値だけを旧パネルから写す。
             var holder = new GameObject("QppUiSettingsHolder") { hideFlags = HideFlags.HideAndDontSave };
@@ -2533,11 +2586,24 @@ namespace Yakigura.QvPalette.Editor
                     if (prop != null) to.CopyFromSerializedProperty(prop);
                 }
                 to.ApplyModifiedPropertiesWithoutUndo();
+                EnsurePresetPages(ui);   // 旧いパネルの値（4 個）を写したあとで、2 ページ分にそろえる
             }
             finally
             {
                 Object.DestroyImmediate(holder);
             }
+        }
+
+        private static void EnsurePresetPages(QppPaletteUI ui)
+        {
+            var so = new SerializedObject(ui);
+            var prop = so.FindProperty("widthPresetMillimeters");
+            if (prop == null || prop.arraySize >= 8) return;
+            float[] defaults = { 3f, 5f, 10f, 30f, 50f, 80f, 100f, 150f };
+            int oldSize = prop.arraySize;
+            prop.arraySize = defaults.Length;
+            for (int i = oldSize; i < defaults.Length; i++) prop.GetArrayElementAtIndex(i).floatValue = defaults[i];
+            so.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static void ValidatePanelScales(QppPaletteUI[] uis)

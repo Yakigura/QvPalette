@@ -32,6 +32,71 @@ namespace Yakigura.QvPalette.Tests
         }
 
         [Test]
+        public void TagsPageNineAtATimeAndSelectionUsesTheShownPage()
+        {
+            var go = new GameObject("Palette");
+            try
+            {
+                var palette = go.AddComponent<QppPalette>();
+                const int count = 40;
+                var masks = new int[count];
+                for (int i = 0; i < count; i++) masks[i] = 1 << (i % 12);
+                var names = new string[12];
+                for (int i = 0; i < names.Length; i++) names[i] = "T" + i;
+                palette.EditorSetData(new Material[1], new Material[1], new bool[1], new int[count], new Color[count],
+                    new int[count], new Gradient[0], new string[count]);
+                palette.EditorSetTags(names, masks);
+                var ui = go.AddComponent<QppPaletteUI>();
+                SetField(ui, "palette", palette);
+
+                ui._SelectTagButton(1);
+                Assert.AreEqual(0, ui.ActiveTag, "page 1, first tag button is tag 0");
+                ui._SelectTagButton(1);
+                ui._NextTagPage();
+                Assert.AreEqual(1, GetField<int>(ui, "tagPage"));
+                ui._SelectTagButton(1);
+                Assert.AreEqual(9, ui.ActiveTag, "page 2, first tag button is tag 9");
+                ui._SelectTagButton(4);
+                Assert.AreEqual(9, ui.ActiveTag, "tag 12 does not exist: the selection stays as it was");
+                ui._NextTagPage();
+                Assert.AreEqual(0, GetField<int>(ui, "tagPage"), "the last page wraps to the first");
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
+        public void MaxTagsIs27AndNineShownPerPage()
+        {
+            Assert.AreEqual(27, QppPalette.MAX_TAGS);
+            Assert.AreEqual(9, QppPalette.TAGS_PER_PAGE);
+        }
+
+        [Test]
+        public void WidthPresetsHaveTwoPagesAndWrap()
+        {
+            var go = new GameObject("Palette");
+            try
+            {
+                var ui = go.AddComponent<QppPaletteUI>();
+                float[] values = GetField<float[]>(ui, "widthPresetMillimeters");
+                Assert.AreEqual(8, values.Length);
+                Assert.AreEqual(50f, values[4]);
+                Assert.AreEqual(150f, values[7]);
+                ui._NextPresetPage();
+                Assert.AreEqual(1, GetField<int>(ui, "presetPage"));
+                ui._NextPresetPage();
+                Assert.AreEqual(0, GetField<int>(ui, "presetPage"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(go);
+            }
+        }
+
+        [Test]
         public void TagFilterPagesOnlyMatchingStylesAndTogglesBackToAll()
         {
             var go = new GameObject("Palette");

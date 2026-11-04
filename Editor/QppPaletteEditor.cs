@@ -358,7 +358,7 @@ namespace Yakigura.QvPalette.Editor
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.HelpBox(
-                "タグは最大 9 個。パネル右端のボタンで、そのタグのインクだけを表示します。" +
+                "タグは最大 27 個（パネルでは 9 個ずつ 3 ページ）。パネル右端のボタンで、そのタグのインクだけを表示します。" +
                 "自動タグ付けは既定のタグ名（" + string.Join(" / ", DefaultTagNames) + "）のうち、ここにあるものだけを付けます。",
                 MessageType.None);
             EditorGUI.indentLevel--;

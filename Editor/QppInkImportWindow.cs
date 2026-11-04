@@ -133,7 +133,7 @@ namespace Yakigura.QvPalette.Editor
             int added = merged.Count - (replace ? 0 : current.Count);
             string message = $"{added} 個のインクを取り込みました。";
             if (dropped.Count > 0)
-                message += "\nタグが 9 個を超えるため、次のタグは付けていません: " + string.Join(", ", dropped);
+                message += "\nタグが 27 個を超えるため、次のタグは付けていません: " + string.Join(", ", dropped);
             EditorUtility.DisplayDialog("QvPalette", message, "OK");
             Close();
         }

@@ -632,7 +632,7 @@ MonoBehaviour:
       Data: 40|UnityEngine.HeaderAttribute, UnityEngine.CoreModule
     - Name: header
       Entry: 1
-      Data: Tags (Max 9, filter only; not synced)
+      Data: Tags (Max 27, 9 per page, filter only; not synced)
     - Name: 
       Entry: 8
       Data: 

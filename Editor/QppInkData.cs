@@ -270,7 +270,7 @@ namespace Yakigura.QvPalette.Editor
 
         /// <summary>
         /// 選んだインクを今の一覧に足す（replace なら置き換える）。
-        /// パレットに無いタグは空きがあれば追加し、9 個を超える分はインクから外す。
+        /// パレットに無いタグは空きがあれば追加し、27 個を超える分はインクから外す。
         /// </summary>
         public static List<QppInk> Merge(List<QppInk> current, string[] currentTags, List<QppInk> incoming, bool replace,
             out string[] mergedTags, out List<string> droppedTags)

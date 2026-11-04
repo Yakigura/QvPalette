@@ -105,10 +105,11 @@ namespace Yakigura.QvPalette.Tests
         }
 
         [Test]
-        public void MergeAddsNewTagsUntilNineAndDropsTheRest()
+        public void MergeAddsNewTagsUntilTwentySevenAndDropsTheRest()
         {
             var current = new List<QppInk> { Ink("a", Color.white, null, null, "t1") };
-            var currentTags = new[] { "t1", "t2", "t3", "t4", "t5", "t6", "t7", "t8" };
+            var currentTags = new string[26];
+            for (int i = 0; i < currentTags.Length; i++) currentTags[i] = "t" + (i + 1);
             var incoming = new List<QppInk> { Ink("b", Color.black, null, null, "t1", "new1", "new2") };
 
             string[] tags;
@@ -116,8 +117,8 @@ namespace Yakigura.QvPalette.Tests
             var merged = QppInkData.Merge(current, currentTags, incoming, false, out tags, out dropped);
 
             Assert.AreEqual(2, merged.Count);
-            Assert.AreEqual(9, tags.Length);
-            Assert.AreEqual("new1", tags[8]);
+            Assert.AreEqual(27, tags.Length);
+            Assert.AreEqual("new1", tags[26]);
             CollectionAssert.AreEqual(new[] { "new2" }, dropped);
             CollectionAssert.AreEqual(new[] { "t1", "new1" }, merged[1].tags);
             CollectionAssert.AreEqual(new[] { "t1", "new1", "new2" }, incoming[0].tags, "the source ink is not modified");

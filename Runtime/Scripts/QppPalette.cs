@@ -20,7 +20,7 @@ namespace Yakigura.QvPalette
         [SerializeField] private Gradient[] gradientBank;
         [SerializeField] private string[] entryNames;
 
-        [Header("Tags (Max 9, filter only; not synced)")]
+        [Header("Tags (Max 27, 9 per page, filter only; not synced)")]
         [SerializeField] private string[] tagNames;
         [Tooltip("エントリごとのタグ。ビット i が tagNames[i] に対応する。")]
         [SerializeField] private int[] entryTags;
@@ -225,7 +225,8 @@ namespace Yakigura.QvPalette
             }
         }
 
-        public const int MAX_TAGS = 9;
+        public const int TAGS_PER_PAGE = 9;
+        public const int MAX_TAGS = 27;
 
         public int TagCount => tagNames != null ? Mathf.Min(tagNames.Length, MAX_TAGS) : 0;
 
