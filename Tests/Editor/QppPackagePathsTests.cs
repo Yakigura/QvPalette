@@ -8,6 +8,15 @@ namespace Yakigura.QvPalette.Tests
     public class QppPackagePathsTests
     {
         [Test]
+        public void VersionIsReadFromPackageJson()
+        {
+            Assert.AreEqual("0.1.0-beta.6", QppPackagePaths.VersionFromJson("{\"name\":\"com.yakigura.qvpalette\",\"version\":\"0.1.0-beta.6\"}"));
+            Assert.AreEqual(string.Empty, QppPackagePaths.VersionFromJson("{\"name\":\"x\"}"), "no version: empty");
+            Assert.AreEqual(string.Empty, QppPackagePaths.VersionFromJson("not json"), "broken json: empty");
+            Assert.AreEqual(string.Empty, QppPackagePaths.VersionFromJson(null));
+        }
+
+        [Test]
         public void RootResolvesToThePaletteScriptAndDerivedPathsExist()
         {
             const string suffix = "/Runtime/Scripts/QppPalette.cs";

@@ -1626,6 +1626,22 @@ namespace Yakigura.QvPalette.Editor
             pageTmp.text = "1 / 4";
             dimTexts.Add(pageTmp);
 
+            // 製品名とバージョン（パネルの右下の端）。バージョンは、Setup を実行したときのパッケージの版。
+            Transform versionTr = GetOrCreateChild(displayRoot, "VersionLabel");
+            versionTr.localPosition = new Vector3(0.405f, -0.252f, 0f);
+            versionTr.localScale = Vector3.one * 0.0035f;
+            var versionTmp = versionTr.GetComponent<TextMeshPro>();
+            if (versionTmp == null) versionTmp = versionTr.gameObject.AddComponent<TextMeshPro>();
+            versionTmp.rectTransform.pivot = new Vector2(1f, 0.5f);
+            versionTmp.rectTransform.sizeDelta = new Vector2(70f, 6f);
+            versionTmp.fontSize = 18;
+            versionTmp.enableWordWrapping = false;
+            versionTmp.alignment = TextAlignmentOptions.Right;
+            versionTmp.color = new Color(0.78f, 0.81f, 0.88f, 1f);
+            string packageVersion = QppPackagePaths.Version;
+            versionTmp.text = string.IsNullOrEmpty(packageVersion) ? "QvPalette" : "QvPalette " + packageVersion;
+            dimTexts.Add(versionTmp);
+
             // Status Indicators (Note: AddComponent<TextMeshPro> replaces Transform with RectTransform, so use component's gameObject)
             Transform busyTr = GetOrCreateChild(displayRoot, "BusyIndicator");
             busyTr.localPosition = new Vector3(0.30f, TopRowY - 0.01f, 0f);

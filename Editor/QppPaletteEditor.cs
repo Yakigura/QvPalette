@@ -45,6 +45,8 @@ namespace Yakigura.QvPalette.Editor
         private GameObject qvpenSource;
         private Material bulkMaterial;
         private Material bulkQuestMaterial;
+        // 複数選択（インク番号の集合）。ReorderableList の標準の複数選択（Ctrl+クリックで追加、Shift+クリックで範囲）から読む。
+        private readonly HashSet<int> picked = new HashSet<int>();
 
         [MenuItem("Tools/Yakigura/QvPalette/Palette Editor", false, 20)]
         public static void ShowWindow()
@@ -118,10 +120,12 @@ namespace Yakigura.QvPalette.Editor
         private void Reload()
         {
             bool newPalette = previewPalette != targetPalette;
+            int previousCount = inks.Count;
             int previousPreviewIndex = newPalette ? -1 : inks.IndexOf(previewInk);
             EnsurePerEntryGradients(targetPalette);
             EnsureTags(targetPalette);
             inks = QppInkData.Read(targetPalette);
+            if (newPalette || inks.Count != previousCount) ClearPicked();
             previewInk = previousPreviewIndex >= 0 && previousPreviewIndex < inks.Count ? inks[previousPreviewIndex] : null;
             if (newPalette)
             {
@@ -160,11 +164,13 @@ namespace Yakigura.QvPalette.Editor
                 list.elementHeightCallback = index =>
                     index < view.Count && QppInkData.IsOutlined(inks[view[index]].material) ? OutlinedElementHeight : ElementHeight;
                 list.drawElementCallback = DrawElement;
+                list.multiSelect = true;
                 list.onReorderCallbackWithDetails = OnReorder;
                 list.onAddCallback = _ => AddInk();
                 list.onSelectCallback = l =>
                 {
                     if (l.index >= 0 && l.index < view.Count) previewInk = inks[view[l.index]];
+                    SyncPicked();
                     Repaint();
                 };
             }
@@ -188,8 +194,8 @@ namespace Yakigura.QvPalette.Editor
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("QvPalette - Palette Editor", EditorStyles.boldLabel);
 
-            var picked = (QppPalette)EditorGUILayout.ObjectField("Target Palette", targetPalette, typeof(QppPalette), true);
-            if (picked != targetPalette) targetPalette = picked;
+            var pickedPalette = (QppPalette)EditorGUILayout.ObjectField("Target Palette", targetPalette, typeof(QppPalette), true);
+            if (pickedPalette != targetPalette) targetPalette = pickedPalette;
             if (targetPalette == null) targetPalette = FindObjectOfType<QppPalette>();
             if (targetPalette == null)
             {
@@ -197,6 +203,18 @@ namespace Yakigura.QvPalette.Editor
                 return;
             }
             if (loadedPalette != targetPalette || inks.Count != targetPalette.EntryCount) Reload();
+
+            SyncPicked();
+
+            // Delete キーで、選んだインクを消す（名前などを書き換えている最中は、文字の削除として扱う）。
+            var keyEvent = Event.current;
+            if (keyEvent.type == EventType.KeyDown && keyEvent.keyCode == KeyCode.Delete && picked.Count > 0 &&
+                !EditorGUIUtility.editingTextField)
+            {
+                keyEvent.Use();
+                DeletePicked();
+                GUIUtility.ExitGUI();
+            }
 
             DrawFileBar();
             DrawQvPenSection();
@@ -413,9 +431,22 @@ namespace Yakigura.QvPalette.Editor
                 new GUIContent("Material 一括設定", "表示中のインクすべての Material を変える。"), bulkMaterial, typeof(Material), false);
             bulkQuestMaterial = (Material)EditorGUILayout.ObjectField(
                 new GUIContent("", "Quest 用（空なら PC と同じ）"), bulkQuestMaterial, typeof(Material), false, GUILayout.Width(140));
+            using (new EditorGUI.DisabledScope(bulkMaterial == null || picked.Count == 0))
+            {
+                if (GUILayout.Button($"選択中の {picked.Count} 個に適用", GUILayout.Width(130)))
+                {
+                    foreach (int i in picked)
+                    {
+                        if (i < 0 || i >= inks.Count) continue;
+                        inks[i].material = bulkMaterial;
+                        inks[i].questMaterial = bulkQuestMaterial;
+                    }
+                    Commit("Set Palette Materials");
+                }
+            }
             using (new EditorGUI.DisabledScope(bulkMaterial == null || view.Count == 0))
             {
-                if (GUILayout.Button($"{view.Count} 個に適用", GUILayout.Width(90)))
+                if (GUILayout.Button($"表示中の {view.Count} 個に適用", GUILayout.Width(130)))
                 {
                     foreach (int i in view)
                     {
@@ -427,9 +458,27 @@ namespace Yakigura.QvPalette.Editor
             }
             EditorGUILayout.EndHorizontal();
 
+            // 複数選択の操作。
+            EditorGUILayout.BeginHorizontal();
+            EditorGUILayout.LabelField(
+                new GUIContent($"選択中 {picked.Count} 個", "行をクリックで選択。Ctrl+クリックで追加・解除、Shift+クリックで範囲。Delete キーで削除。"),
+                GUILayout.Width(100));
+            if (GUILayout.Button("表示中をすべて選択", GUILayout.Width(130)) && list != null && view.Count > 0)
+            {
+                list.SelectRange(0, view.Count - 1);
+                SyncPicked();
+            }
+            using (new EditorGUI.DisabledScope(picked.Count == 0))
+            {
+                if (GUILayout.Button("選択を解除", GUILayout.Width(90))) ClearPicked();
+                if (GUILayout.Button("選択を削除（Delete キー）", GUILayout.Width(170))) DeletePicked();
+            }
+            EditorGUILayout.EndHorizontal();
+
             EditorGUILayout.HelpBox(
                 filter == FilterAll
                     ? "左端の ≡ をドラッグするか、番号を書き換えると並べ替えられます。並び順がパネルの表示順です。" +
+                      "行をクリックで選択（Ctrl+クリックで追加、Shift+クリックで範囲）。選んだインクは、Delete キーで削除、Material は「選択中の個数に適用」でまとめて変えられます。" +
                       "公開済みのワールドで並べ替え・削除すると、プレイヤーが保存したお気に入りが別のインクを指すことがあります。"
                     : "絞り込み中はドラッグで並べ替えできません（番号の書き換えはできます）。",
                 MessageType.None);
@@ -562,6 +611,7 @@ namespace Yakigura.QvPalette.Editor
 
             if (remove)
             {
+                ClearPicked();
                 inks.RemoveAt(i);
                 Commit("Remove Palette Ink");
                 RebuildView();
@@ -569,6 +619,7 @@ namespace Yakigura.QvPalette.Editor
             }
             if (duplicate && inks.Count < QppInkData.MaxInks)
             {
+                ClearPicked();
                 inks.Insert(i + 1, ink.Clone());
                 Commit("Duplicate Palette Ink");
                 RebuildView();
@@ -639,9 +690,41 @@ namespace Yakigura.QvPalette.Editor
             MoveInk(oldIndex, newIndex);
         }
 
+        private void ClearPicked()
+        {
+            picked.Clear();
+            if (list != null) list.ClearSelection();
+        }
+
+        /// <summary>ReorderableList で選ばれている行（表示位置）を、インク番号の集合に直す。</summary>
+        private void SyncPicked()
+        {
+            picked.Clear();
+            if (list == null) return;
+            foreach (int position in list.selectedIndices)
+                if (position >= 0 && position < view.Count) picked.Add(view[position]);
+        }
+
+        private void DeletePicked()
+        {
+            if (picked.Count == 0) return;
+            int count = picked.Count;
+            if (!EditorUtility.DisplayDialog("QvPalette",
+                    $"選んだ {count} 個のインクを削除します。\n" +
+                    "公開済みのワールドで削除すると、プレイヤーが保存したお気に入りが別のインクを指すことがあります。\n" +
+                    "（Ctrl+Z で元に戻せます）",
+                    "削除する", "やめる")) return;
+            QppInkSelection.RemoveSelected(inks, picked);
+            ClearPicked();
+            previewInk = null;
+            Commit("Delete Palette Inks");
+            RebuildView();
+        }
+
         private void MoveInk(int from, int to)
         {
             if (from == to || from < 0 || from >= inks.Count) return;
+            ClearPicked();
             var ink = inks[from];
             inks.RemoveAt(from);
             inks.Insert(Mathf.Clamp(to, 0, inks.Count), ink);

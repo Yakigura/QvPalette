@@ -44,6 +44,36 @@ namespace Yakigura.QvPalette.Editor
             }
         }
 
+        /// <summary>パッケージの版（package.json の version）。パッケージの形で入っていない開発用の配置では、空。</summary>
+        public static string Version
+        {
+            get
+            {
+                string path = Path.Combine(PhysicalRoot, "package.json");
+                return File.Exists(path) ? VersionFromJson(File.ReadAllText(path)) : string.Empty;
+            }
+        }
+
+        [Serializable]
+        private class PackageJsonVersion
+        {
+            public string version;
+        }
+
+        public static string VersionFromJson(string json)
+        {
+            if (string.IsNullOrEmpty(json)) return string.Empty;
+            try
+            {
+                string version = UnityEngine.JsonUtility.FromJson<PackageJsonVersion>(json).version;
+                return version ?? string.Empty;
+            }
+            catch (ArgumentException)
+            {
+                return string.Empty;
+            }
+        }
+
         public static bool IsImmutable => IsImmutableRoot(Root);
 
         public static bool IsImmutableRoot(string packageRoot) =>
