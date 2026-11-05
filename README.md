@@ -23,21 +23,21 @@ QvPen（v3.3.15）に追従する、インクパレット拡張です。QvPenの
 | 項目 | 内容 |
 |---|---|
 | Unity | 2022.3 |
-| VRChat SDK | Worlds 3.5以上（検証は3.10.5） |
+| VRChat SDK | Worlds 3.5以上（検証は3.10.6） |
 | QvPen | 3.3.15（このバージョンで検証。他のバージョンは動作未確認） |
 | TextMeshPro | 導入済みであること |
 | 依存（自動で入ります） | QvInkPreview（`com.yakigura.qvinkpreview`） |
 
 ## 導入方法（VCC）
 
-1. VCCの「Settings → Packages → Add Repository」に、配布元のVPMリストURLを登録します。 **[URLは公開時に記載]**
+1. VCCの「Settings → Packages → Add Repository」に、`https://yakigura.github.io/vpm/index.json` を登録します（`https://yakigura.github.io/vpm/` の「VCCに追加する」からでも登録できます）。ベータ版は、VCCの設定でプレリリース版を表示すると選べます。
 2. プロジェクトの「Manage Project」で、**QvPalette** の「+」を押します。QvInkPreviewも一緒に導入されます。
 3. シーンを開き、メニューの **`Tools > Yakigura > QvPalette > Setup（このシーンに導入・更新）`** を実行して、シーンを保存します。
 4. シーン内の `QvPen_PenManager` が自動で検出され、台帳とパネルが生成されます。
 
 ## 使い方
 
-- **ペンの本数を変えたとき**: もう一度 `Scan Scene & Rebind` を実行します。
+- **ペンの本数を変えたとき、QvPaletteを更新したとき**: もう一度 `Setup（このシーンに導入・更新）` を実行します。
 - **インクの設定**: `Tools > Yakigura > QvPalette > Palette Editor` を開き、インクごとのグラデーション、マテリアル（PC / Quest）、縁取りを設定します。ウィンドウ上部の「プレビュー」で見た目を確認できます。
 - **台帳の容量**: シーンの `QvPalette/Setup` オブジェクトのインスペクターで、チャンク数と容量を調整します（既定は、ペン1本あたり4,096回で、十分な容量です）。
 
