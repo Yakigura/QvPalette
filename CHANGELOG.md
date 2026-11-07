@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.0-beta.7] — ベータ版
+
+- パッケージの説明文を変更。
+- VPM 一覧の URL を、QvPalette 専用（`https://yakigura.github.io/vpm-qvpalette/index.json`）に変更。README と規約（配布元の記載）を更新。
+- 規約の第9条を変更（最新の規約が、すでに入手した版にも適用される）。
+
 ## [0.1.0-beta.6] — ベータ版
 
 - パレットの右下の端に、「QvPalette」とバージョンを表示（バージョンは、Setup を実行したときの版。更新したら、もう一度 Setup を実行する）。

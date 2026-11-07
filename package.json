@@ -1,9 +1,9 @@
 {
   "name": "com.yakigura.qvpalette",
   "displayName": "QvPalette",
-  "version": "0.1.0-beta.6",
+  "version": "0.1.0-beta.7",
   "unity": "2022.3",
-  "description": "QvPen の非公式拡張。ペン 1 本で最大 4096 色・1024 段階の太さを同期するインクパレット。",
+  "description": "QvPen の非公式拡張。ペン 1 本で最大 4096 のインクを使用できるQvPen拡張ツール",
   "author": {
     "name": "やきたてぐらふてぃ",
     "url": "https://github.com/Yakigura"
@@ -23,5 +23,5 @@
   "documentationUrl": "https://github.com/Yakigura/QvPalette#readme",
   "changelogUrl": "https://github.com/Yakigura/QvPalette/blob/main/CHANGELOG.md",
   "licensesUrl": "https://github.com/Yakigura/QvPalette/blob/main/LICENSE",
-  "url": "https://github.com/Yakigura/QvPalette/releases/download/0.1.0-beta.6/com.yakigura.qvpalette-0.1.0-beta.6.zip"
+  "url": "https://github.com/Yakigura/QvPalette/releases/download/0.1.0-beta.7/com.yakigura.qvpalette-0.1.0-beta.7.zip"
 }
