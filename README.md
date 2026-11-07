@@ -30,7 +30,7 @@ QvPen（v3.3.15）に追従する、インクパレット拡張です。QvPenの
 
 ## 導入方法（VCC）
 
-1. VCCの「Settings → Packages → Add Repository」に、`https://yakigura.github.io/vpm/index.json` を登録します（`https://yakigura.github.io/vpm/` の「VCCに追加する」からでも登録できます）。ベータ版は、VCCの設定でプレリリース版を表示すると選べます。
+1. VCCの「Settings → Packages → Add Repository」に、`https://yakigura.github.io/vpm-qvpalette/index.json` を登録します（`https://yakigura.github.io/vpm-qvpalette/` の「VCCに追加する」からでも登録できます）。ベータ版は、VCCの設定でプレリリース版を表示すると選べます。
 2. プロジェクトの「Manage Project」で、**QvPalette** の「+」を押します。QvInkPreviewも一緒に導入されます。
 3. シーンを開き、メニューの **`Tools > Yakigura > QvPalette > Setup（このシーンに導入・更新）`** を実行して、シーンを保存します。
 4. シーン内の `QvPen_PenManager` が自動で検出され、台帳とパネルが生成されます。

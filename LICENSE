@@ -12,7 +12,7 @@ Copyright (c) 2026 やきたてぐらふてぃ (Negiyaki). All rights reserved.
    c. 組み込んだワールドでの動画撮影、配信、SNS への投稿（収益化を含む）。クレジット表記は任意です。
 
 2. 禁止すること
-   a. 本アセットそのもの、または改変したものを、配布元（Yakigura/vpm、Yakigura/QvPalette、Yakigura/QvInkPreview、BOOTH の頒布ページ）以外で、第三者がダウンロードできる状態にすること
+   a. 本アセットそのもの、または改変したものを、配布元（Yakigura/vpm-qvpalette、Yakigura/QvPalette、Yakigura/QvInkPreview、BOOTH の頒布ページ）以外で、第三者がダウンロードできる状態にすること
       （二次配布、再販売、UnityPackage の再共有、公開リポジトリや VPM リストでの公開、Public アバターへの組み込みなど）。
    b. 第 6 条（生成 AI 等を利用した解析の禁止）または第 7 条（リバースエンジニアリング等の禁止）に反すること。
    c. 他のプレイヤーへの視界の妨害や荒らし、過度な負荷やクラッシュを意図した利用、
