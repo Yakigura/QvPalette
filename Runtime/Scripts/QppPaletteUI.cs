@@ -76,6 +76,8 @@ namespace Yakigura.QvPalette
         [SerializeField] private float panelOpacity = 0.35f;
         [Tooltip("非操作中（描画中）のパネル板の不透明度。")]
         [SerializeField] private float inactiveOpacity = 0.15f;
+        [Tooltip("VR で描いている間、パネルを薄くするか。既定はオフ（チラつきに見えるため、パネルの濃さは変えない）。")]
+        [SerializeField] private bool dimWhileDrawing = false;
         [Tooltip("非操作中の文字の不透明度。読めなくならないよう板より高めにする。")]
         [SerializeField] private float inactiveTextOpacity = 0.6f;
         [SerializeField] private float fadeSeconds = 0.15f;
@@ -522,7 +524,7 @@ namespace Yakigura.QvPalette
 
             // 減光するのは VR のみ。Desktop はクリックがそのまま描画開始なので、
             // 操作しようとした瞬間にパネルが薄くなって読めなくなってしまう。
-            bool dimmed = isUserInVR && IsPenDrawing;
+            bool dimmed = dimWhileDrawing && isUserInVR && IsPenDrawing;
             float target = dimmed ? inactiveOpacity : panelOpacity;
             if (fadeSeconds > 0.001f)
             {
