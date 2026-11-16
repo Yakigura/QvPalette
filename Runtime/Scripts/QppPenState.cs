@@ -85,25 +85,41 @@ namespace Yakigura.QvPalette
             }
         }
 
-        public bool _CanSetStyle()
+        [System.NonSerialized] public bool _lastBlockWasPermanent;
+        private bool lastBlockWasSilent;
+        private bool lastBlockWasLedgerFull;
+
+        public bool _CanSetStyleQuiet()
         {
-            if (Utilities.IsValid(binding) && !binding.CanEdit) return false;
+            _lastBlockWasPermanent = false;
+            lastBlockWasSilent = false;
+            lastBlockWasLedgerFull = false;
+            if (Utilities.IsValid(binding) && !binding.CanEdit)
+            {
+                _lastBlockWasPermanent = true;
+                lastBlockWasSilent = true;
+                return false;
+            }
             if (IsLedgerFull)
             {
-                NotifyLedgerFull();
+                _lastBlockWasPermanent = ledger.FreeRecords <= 0;
+                lastBlockWasLedgerFull = true;
                 return false;
             }
-            if (Time.time - droppedAt < dropCooldownSeconds)
-            {
-                NotifyBusy();
-                return false;
-            }
-            if (Utilities.IsValid(ledger) && !ledger.CanQueueAppend(_ResolveFromInkId()))
-            {
-                NotifyBusy();
-                return false;
-            }
+            if (Time.time - droppedAt < dropCooldownSeconds) return false;
+            if (Utilities.IsValid(ledger) && !ledger.CanQueueAppend(_ResolveFromInkId())) return false;
             return true;
+        }
+
+        public bool _CanSetStyle()
+        {
+            if (_CanSetStyleQuiet()) return true;
+            if (!lastBlockWasSilent)
+            {
+                if (lastBlockWasLedgerFull) NotifyLedgerFull();
+                else NotifyBusy();
+            }
+            return false;
         }
 
         public int _ResolveFromInkId()
@@ -172,7 +188,17 @@ namespace Yakigura.QvPalette
 
         private void CommitStyle(int styleId, int widthIndex)
         {
+            CommitStyleCore(0, false, styleId, widthIndex);
+        }
 
+        public bool _CommitStyleFrom(int fromInkId, int styleId, int widthIndex)
+        {
+            CommitStyleCore(fromInkId, true, styleId, widthIndex);
+            return true;
+        }
+
+        private void CommitStyleCore(int fromInkId, bool useExplicitFromInkId, int styleId, int widthIndex)
+        {
             if (!Networking.IsOwner(gameObject))
             {
                 Networking.SetOwner(Networking.LocalPlayer, gameObject);
@@ -180,7 +206,7 @@ namespace Yakigura.QvPalette
 
             syncedStyleId = styleId;
             syncedWidthIndex = widthIndex;
-            syncedFromInkId = _ResolveFromInkId();
+            syncedFromInkId = useExplicitFromInkId ? fromInkId : _ResolveFromInkId();
             syncedEpoch++;
 
             if (Utilities.IsValid(ledger))

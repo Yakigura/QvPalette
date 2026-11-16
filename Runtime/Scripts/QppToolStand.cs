@@ -19,7 +19,9 @@ namespace Yakigura.QvPalette
         [SerializeField] private TextMeshPro label;
         [Tooltip("戻すまでに押し続ける時間（秒）。")]
         [SerializeField] private float holdSeconds = 1.0f;
-        [SerializeField] private string interactionText = "長押しでツールを戻す";
+        [Tooltip("ワールド内の表示言語。0 = 自動（見る人の VRChat の言語）、1 = 日本語、2 = English、3 = 한국어。")]
+        [SerializeField] private int languageSetting = 0;
+        [SerializeField] private QppPaletteUI ui;
 
         private Vector3 fillBaseScale = Vector3.one;
         private bool pressing;
@@ -27,12 +29,21 @@ namespace Yakigura.QvPalette
 
         private void Start()
         {
-            InteractionText = interactionText;
+            RefreshLanguage();
             if (Utilities.IsValid(fill))
             {
                 fillBaseScale = fill.localScale;
                 SetFill(0f);
             }
+        }
+
+        /// <summary>見せる文字（押し続けるとツールを戻す）を、いまの言語で書く。</summary>
+        public void RefreshLanguage()
+        {
+            int lang = Utilities.IsValid(ui) ? ui.CurrentLanguage() : QppText.Resolve(languageSetting);
+            string text = QppText.StandInteraction(lang);
+            InteractionText = text;
+            if (Utilities.IsValid(label)) label.text = text;
         }
 
         public override void Interact()
@@ -77,6 +88,16 @@ namespace Yakigura.QvPalette
         }
 
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
+        public void EditorSetLanguage(int setting)
+        {
+            languageSetting = setting;
+        }
+
+        public void EditorSetUi(QppPaletteUI paletteUi)
+        {
+            ui = paletteUi;
+        }
+
         public void EditorSetReferences(QppPaletteTool t, Transform fillTr, TextMeshPro lbl)
         {
             tool = t;

@@ -53,9 +53,14 @@ namespace Yakigura.QvPalette
 
         public static string PenScaleTextOf(float scale)
         {
+            return PenScaleTextOf(scale, QppText.LANG_JA);
+        }
+
+        public static string PenScaleTextOf(float scale, int lang)
+        {
             int hundredths = Mathf.RoundToInt(scale * 100f);
             int frac = hundredths % 100;
-            return "ペン " + (hundredths / 100) + "." + (frac < 10 ? "0" : "") + frac + "x";
+            return QppText.PenLabel(lang) + " " + (hundredths / 100) + "." + (frac < 10 ? "0" : "") + frac + "x";
         }
 
         public static int IndexOfWidth(float w)

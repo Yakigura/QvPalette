@@ -31,6 +31,13 @@ namespace Yakigura.QvPalette
         [SerializeField] private float[] widthPresetMillimeters = new float[] { 3f, 5f, 10f, 30f, 50f, 80f, 100f, 150f };
         [Tooltip("太さプリセットのページを切り替えるボタン（1 ページ 4 個）。")]
         [SerializeField] private QppControlButton presetPageButton;
+        [Tooltip("ワールド内の表示言語。0 = 自動（見る人の VRChat の言語）、1 = 日本語、2 = English、3 = 한국어。")]
+        [SerializeField] private int languageSetting = 0;
+        [SerializeField] private TextMeshPro favoritesTitleText;
+        [Tooltip("言語を切り替えるボタン（押した人だけに効く。選んだ言語は覚える）。")]
+        [SerializeField] private QppControlButton languageButton;
+        [SerializeField] private QppToolStand toolStand;
+        [SerializeField] private TextMeshPro tagTitleText;
         [Tooltip("タグのページを切り替えるボタン（1 ページ 9 個）。")]
         [SerializeField] private QppControlButton tagPageButton;
         [SerializeField] private TextMeshPro pageText;
@@ -160,7 +167,6 @@ namespace Yakigura.QvPalette
         public QppPenSizeSlider PenSizeSlider => penSizeSlider;
         private const float PenScaleApplyDelay = 0.5f;
         // 数値だけだと何の太さか分かりにくいので、線の太さであることを添える（フォント依存を避けるため ASCII 表記）。
-        private const string WidthLabelPrefix = "Width ";
         private float penScaleChangedAt;
         private bool penScaleApplyScheduled;
         public float CurrentPenScale => Utilities.IsValid(favorites) ? favorites.PenScale : 1f;
@@ -204,8 +210,79 @@ namespace Yakigura.QvPalette
             if (Utilities.IsValid(pinIndicator))
                 pinIndicator.SetActive(isPinned);
 
+            ApplyLanguage();
+
             // 一度もペンを持っていない間は、どのペンにも紐づけない（知らないうちに 1 本目のペンを変えないため）。
             RefreshUI();
+        }
+
+        private void SetIndicatorText(GameObject indicator, string text)
+        {
+            if (!Utilities.IsValid(indicator)) return;
+            var tmp = indicator.GetComponent<TextMeshPro>();
+            if (Utilities.IsValid(tmp)) tmp.text = text;
+        }
+
+        /// <summary>いまの言語の設定（0 = 自動、1 = 日本語、2 = English、3 = 한국어）。言語ボタンで選んだ言語があれば、それ。なければ、ワールド制作者の既定。</summary>
+        public int CurrentLanguageSetting()
+        {
+            if (Utilities.IsValid(favorites) && favorites.LanguageChoice >= 0) return favorites.LanguageChoice;
+            return languageSetting;
+        }
+
+        /// <summary>実際に使う言語（1 = 日本語、2 = English、3 = 한국어）。</summary>
+        public int CurrentLanguage()
+        {
+            return QppText.Resolve(CurrentLanguageSetting());
+        }
+
+        /// <summary>言語ボタン: 自動 → 日本語 → English → 한국어 → 自動…</summary>
+        public void _NextLanguage()
+        {
+            int next = (CurrentLanguageSetting() + 1) % 4;
+            if (Utilities.IsValid(favorites)) favorites._SetLanguage(next);
+            else languageSetting = next;
+            RefreshLanguageEverywhere();
+        }
+
+        private void RefreshLanguageEverywhere()
+        {
+            lastWidthTextIndex = -1;   // 太さの文字（Width / 太さ / 두께）も、書き直させる
+            ApplyLanguage();
+            if (Utilities.IsValid(penSizeSlider)) penSizeSlider.RefreshLabel();
+            if (Utilities.IsValid(toolStand)) toolStand.RefreshLanguage();
+            if (Utilities.IsValid(paletteTool)) paletteTool.RefreshLanguage();
+            RefreshUI();
+        }
+
+        // 覚えておいた言語が読み込まれたあとに、文字を書き直す（読み込みの順番に左右されないよう、少し待つ）。
+        public override void OnPlayerRestored(VRCPlayerApi player)
+        {
+            if (!Utilities.IsValid(player) || !player.isLocal) return;
+            SendCustomEventDelayedFrames(nameof(_ApplyRestoredLanguage), 5);
+        }
+
+        public void _ApplyRestoredLanguage()
+        {
+            RefreshLanguageEverywhere();
+        }
+
+        private void RefreshLanguageButton()
+        {
+            if (!Utilities.IsValid(languageButton)) return;
+            languageButton.SetLabel(QppText.LanguageName(CurrentLanguageSetting(), CurrentLanguage()), tagColor);
+            languageButton.SetBackgroundColor(tagPlateColor);
+        }
+
+        /// <summary>パネルの固定の文字（見出し）を、言語に合わせて書く。</summary>
+        private void ApplyLanguage()
+        {
+            int lang = CurrentLanguage();
+            if (Utilities.IsValid(favoritesTitleText)) favoritesTitleText.text = QppText.FavoritesTitle(lang);
+            if (Utilities.IsValid(tagTitleText)) tagTitleText.text = QppText.TagTitle(lang);
+            SetIndicatorText(busyIndicator, QppText.Syncing(lang));
+            SetIndicatorText(readOnlyIndicator, QppText.InUse(lang));
+            SetIndicatorText(fullIndicator, QppText.Full(lang));
         }
 
         private void OnEnable()
@@ -1283,6 +1360,7 @@ namespace Yakigura.QvPalette
                 readOnlyIndicator.SetActive(isReadOnly);
             RefreshFullIndicator();
             RefreshTagButtons();
+            RefreshLanguageButton();
 
             // 選択表示などで文字色を書き直すと不透明度が 1 に戻るので、次の Update で塗り直させる。
             appliedOpacity = -1f;
@@ -1309,7 +1387,8 @@ namespace Yakigura.QvPalette
                     previewGradients[gradIndex],
                     previewColorKeys,
                     previewAlphaKeys,
-                    propertyBlock);
+                    propertyBlock,
+                    CurrentLanguage());
             }
         }
 
@@ -1320,7 +1399,7 @@ namespace Yakigura.QvPalette
             if (currentWidthIndex == lastWidthTextIndex) return;
 
             lastWidthTextIndex = currentWidthIndex;
-            widthText.text = WidthLabelPrefix + WidthTextOf(currentWidthIndex);
+            widthText.text = QppText.WidthLabel(CurrentLanguage()) + " " + WidthTextOf(currentWidthIndex);
         }
 
         private float nextFullCheckTime;
@@ -1428,7 +1507,7 @@ namespace Yakigura.QvPalette
                 if (tagPageButton.gameObject.activeSelf != showTagPage) tagPageButton.gameObject.SetActive(showTagPage);
                 if (showTagPage)
                 {
-                    tagPageButton.SetLabel("タグ " + (tagPage + 1) + "/" + tagPages + " →", tagColor);
+                    tagPageButton.SetLabel(QppText.TagPage(CurrentLanguage(), tagPage + 1, tagPages), tagColor);
                     tagPageButton.SetBackgroundColor(tagPlateColor);
                 }
             }
@@ -1443,7 +1522,7 @@ namespace Yakigura.QvPalette
                 if (!visible) continue;
 
                 bool active = (i == 0 && activeTag < 0) || (i > 0 && activeTag == tagIndex);
-                string text = i == 0 ? "すべて" : palette.TagNameOf(tagIndex);
+                string text = i == 0 ? QppText.TagAll(CurrentLanguage()) : palette.TagNameOf(tagIndex);
                 b.SetLabel(active ? "● " + text : text, active ? tagActiveColor : tagColor);
                 b.SetBackgroundColor(active ? tagActivePlateColor : tagPlateColor);
             }
@@ -1535,6 +1614,23 @@ namespace Yakigura.QvPalette
             for (int i = 0; i < defaults.Length; i++)
                 values[i] = (widthPresetMillimeters != null && i < widthPresetMillimeters.Length) ? widthPresetMillimeters[i] : defaults[i];
             widthPresetMillimeters = values;
+        }
+
+        public void EditorSetLanguageButton(QppControlButton button)
+        {
+            languageButton = button;
+        }
+
+        public void EditorSetToolStand(QppToolStand stand)
+        {
+            toolStand = stand;
+        }
+
+        public void EditorSetLanguage(int setting, TextMeshPro favoritesTitle, TextMeshPro tagTitle)
+        {
+            languageSetting = setting;
+            favoritesTitleText = favoritesTitle;
+            tagTitleText = tagTitle;
         }
 
         public void EditorSetPaletteTool(QppPaletteTool pTool)

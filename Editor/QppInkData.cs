@@ -525,10 +525,10 @@ namespace Yakigura.QvPalette.Editor
             }
             catch (Exception e)
             {
-                throw new ArgumentException("JSON として読めません: " + e.Message);
+                throw new ArgumentException(QppEditorText.T("JSON として読めません: " + e.Message, "Cannot read as JSON: " + e.Message, "JSON으로 읽을 수 없습니다: " + e.Message));
             }
             if (file == null || file.format != FileFormat || file.inks == null)
-                throw new ArgumentException("QvPalette のインクファイルではありません。");
+                throw new ArgumentException(QppEditorText.T("QvPalette のインクファイルではありません。", "This is not a QvPalette ink file.", "QvPalette 잉크 파일이 아닙니다."));
 
             var content = new FileContent { tagNames = file.tags ?? new string[0] };
             foreach (var json in file.inks)

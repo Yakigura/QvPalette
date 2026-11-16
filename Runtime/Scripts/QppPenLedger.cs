@@ -14,6 +14,8 @@ namespace Yakigura.QvPalette
         [SerializeField] private int penSlot;
 
         [Header("Settings")]
+        // このペンの最初のインク（台帳の最初の行になる）。Setup が、セットの中の順番から決めて書き込む。
+        [SerializeField] private int defaultStyleId = 0;
         [SerializeField] private int defaultWidthIndex = QppCommon.DEFAULT_WIDTH_INDEX;
         [SerializeField] private float seedGraceSeconds = 3.0f;
         [SerializeField] private float ledgerWriteGraceSeconds = 5.0f;
@@ -32,6 +34,8 @@ namespace Yakigura.QvPalette
         private bool warnedLedgerFull;
 
         public QppLedgerChunk[] Chunks => chunks;
+        public int DefaultStyleId => defaultStyleId;
+        public int DefaultWidthIndex => defaultWidthIndex;
 
         public int LocalTotalCount
         {
@@ -187,7 +191,7 @@ namespace Yakigura.QvPalette
                 return;
             }
 
-            active.Seed(defaultWidthIndex);
+            active.Seed(defaultStyleId, defaultWidthIndex);
             active._MarkDirty();
         }
 
@@ -218,11 +222,11 @@ namespace Yakigura.QvPalette
                 return;
             }
 
-            c0.Seed(defaultWidthIndex);
+            c0.Seed(defaultStyleId, defaultWidthIndex);
             c0._MarkDirty();
         }
 
-        /// <summary>切替記録をあと何件積めるか（送信待ちの分を差し引いた数）。</summary>
+        /// <summary>全チャンクの未使用レコード数（送信待ちは含まない）。</summary>
         public int FreeRecords
         {
             get
@@ -235,9 +239,11 @@ namespace Yakigura.QvPalette
                         if (Utilities.IsValid(chunks[i])) cap += chunks[i].Capacity;
                     }
                 }
-                return cap - LocalTotalCount - qCount;
+                return cap - LocalTotalCount;
             }
         }
+
+        public int AvailableRecords => FreeRecords - qCount;
 
         /// <summary>
         /// この線IDからの切替を記録できるか。満杯なら false。
@@ -246,8 +252,10 @@ namespace Yakigura.QvPalette
         public bool CanRecord(int fromInkId)
         {
             if (qCount > 0 && qFrom[qCount - 1] == fromInkId) return true;
-            return FreeRecords > 0;
+            return AvailableRecords > 0;
         }
+
+        public int QueueFree => PQ - qCount;
 
         public bool CanQueueAppend(int fromInkId)
         {
@@ -320,7 +328,7 @@ namespace Yakigura.QvPalette
                 {
                     if (qFrom[0] > 0)
                     {
-                        chunk.Seed(defaultWidthIndex);
+                        chunk.Seed(defaultStyleId, defaultWidthIndex);
                     }
                 }
 
@@ -351,7 +359,7 @@ namespace Yakigura.QvPalette
 
         public bool TryResolve(int inkId, out int styleId, out int widthIndex)
         {
-            styleId = 0;
+            styleId = defaultStyleId;
             widthIndex = defaultWidthIndex;
             if (chunks == null || chunks.Length == 0) return false;
 
@@ -416,6 +424,8 @@ namespace Yakigura.QvPalette
         }
 
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
+        public int EditorDefaultStyleId { get { return defaultStyleId; } set { defaultStyleId = value; } }
+
         public void EditorSetReferences(
             QppLedgerChunk[] cks,
             QppPenState ps,

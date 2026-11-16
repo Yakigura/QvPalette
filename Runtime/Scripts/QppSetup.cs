@@ -18,12 +18,16 @@ namespace Yakigura.QvPalette
 
         [Header("Default Initial Styles")]
         [SerializeField] private int defaultStyleId = 0;
+        // ペンごとの最初のインク（QvPen のセットの中の順番。0 から数える）。空なら、全ペンが defaultStyleId。
+        [SerializeField] private int[] initialStyleIds;
         [SerializeField] private int defaultWidthIndex = QppCommon.DEFAULT_WIDTH_INDEX;
 
         // 台帳（色・太さの切替履歴）の容量。ペン 1 本あたりのチャンク数と、1 チャンクの件数。
         // インスペクターで変え、Setup が使う（実行時には使わない）。
         [SerializeField] private int ledgerChunksPerPen = 8;
         [SerializeField] private int ledgerChunkCapacity = 512;
+        [Tooltip("ワールド内の文字の言語。0 = 自動（見る人の VRChat の言語）、1 = 日本語、2 = English、3 = 한국어。")]
+        [SerializeField] private int languageSetting = 0;
 
         private int[] registeredPenIds;
         private int registeredCount;
@@ -61,7 +65,9 @@ namespace Yakigura.QvPalette
                         continue;
                     }
 
-                    bindings[i].ApplyLocal(defaultStyleId, defaultWidthIndex);
+                    int initialStyle = defaultStyleId;
+                    if (initialStyleIds != null && i < initialStyleIds.Length) initialStyle = initialStyleIds[i];
+                    bindings[i].ApplyLocal(initialStyle, defaultWidthIndex);
                 }
             }
 
@@ -112,6 +118,8 @@ namespace Yakigura.QvPalette
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
         public int EditorLedgerChunksPerPen { get { return ledgerChunksPerPen; } set { ledgerChunksPerPen = value; } }
         public int EditorLedgerChunkCapacity { get { return ledgerChunkCapacity; } set { ledgerChunkCapacity = value; } }
+        public int[] EditorInitialStyleIds { get { return initialStyleIds; } set { initialStyleIds = value; } }
+        public int EditorLanguageSetting { get { return languageSetting; } set { languageSetting = value; } }
 
         public void EditorSetReferences(
             QvPen_PenManager[] pms,

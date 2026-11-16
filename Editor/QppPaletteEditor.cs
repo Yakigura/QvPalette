@@ -162,7 +162,7 @@ namespace Yakigura.QvPalette.Editor
                 list = new ReorderableList(view, typeof(int), true, false, true, false);
                 list.elementHeight = ElementHeight;
                 list.elementHeightCallback = index =>
-                    index < view.Count && QppInkData.IsOutlined(inks[view[index]].material) ? OutlinedElementHeight : ElementHeight;
+                    ElementHeightOf(index < view.Count && QppInkData.IsOutlined(inks[view[index]].material));
                 list.drawElementCallback = DrawElement;
                 list.multiSelect = true;
                 list.onReorderCallbackWithDetails = OnReorder;
@@ -193,13 +193,14 @@ namespace Yakigura.QvPalette.Editor
         {
             EditorGUILayout.Space();
             EditorGUILayout.LabelField("QvPalette - Palette Editor", EditorStyles.boldLabel);
+            QppEditorText.DrawLanguagePopup();
 
             var pickedPalette = (QppPalette)EditorGUILayout.ObjectField("Target Palette", targetPalette, typeof(QppPalette), true);
             if (pickedPalette != targetPalette) targetPalette = pickedPalette;
             if (targetPalette == null) targetPalette = FindObjectOfType<QppPalette>();
             if (targetPalette == null)
             {
-                EditorGUILayout.HelpBox("Scene内に QppPalette が見つかりません。Prefabを配置するか選択してください。", MessageType.Warning);
+                EditorGUILayout.HelpBox(QppEditorText.T("Scene内に QppPalette が見つかりません。Prefabを配置するか選択してください。", "No QppPalette found in the scene. Place the Prefab or select one.", "씬에서 QppPalette를 찾을 수 없어요. Prefab을 배치하거나 선택해 주세요."), MessageType.Warning);
                 return;
             }
             if (loadedPalette != targetPalette || inks.Count != targetPalette.EntryCount) Reload();
@@ -227,23 +228,23 @@ namespace Yakigura.QvPalette.Editor
         private void DrawPreview()
         {
             EditorGUILayout.Space();
-            EditorGUILayout.LabelField("プレビュー", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField(QppEditorText.T("プレビュー", "Preview", "미리보기"), EditorStyles.boldLabel);
             if (previewInk == null || !inks.Contains(previewInk))
                 previewInk = view.Count > 0 ? inks[view[0]] : null;
             if (previewInk == null)
             {
-                EditorGUILayout.HelpBox("インクを選択してください。", MessageType.None);
+                EditorGUILayout.HelpBox(QppEditorText.T("インクを選択してください。", "Select an ink.", "잉크를 선택해 주세요."), MessageType.None);
                 return;
             }
 
-            EditorGUILayout.LabelField("選択中", string.IsNullOrEmpty(previewInk.name)
-                ? $"インク {inks.IndexOf(previewInk)}" : $"{inks.IndexOf(previewInk)}: {previewInk.name}");
+            EditorGUILayout.LabelField(QppEditorText.T("選択中", "Selected", "선택됨"), string.IsNullOrEmpty(previewInk.name)
+                ? QppEditorText.T($"インク {inks.IndexOf(previewInk)}", $"Ink {inks.IndexOf(previewInk)}", $"잉크 {inks.IndexOf(previewInk)}") : $"{inks.IndexOf(previewInk)}: {previewInk.name}");
             EditorGUILayout.BeginHorizontal();
             previewQuest = EditorGUILayout.ToggleLeft("Quest", previewQuest, GUILayout.Width(65f));
-            previewBackground = EditorGUILayout.Popup("背景", previewBackground, new[] { "暗い", "中間", "明るい" });
+            previewBackground = EditorGUILayout.Popup(QppEditorText.T("背景", "Background", "배경"), previewBackground, new[] { QppEditorText.T("暗い", "Dark", "어두움"), QppEditorText.T("中間", "Medium", "중간"), QppEditorText.T("明るい", "Light", "밝음") });
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.BeginHorizontal();
-            previewWidthIndex = EditorGUILayout.IntSlider("太さ", previewWidthIndex, 0, QppCommon.MAX_WIDTH_INDEX);
+            previewWidthIndex = EditorGUILayout.IntSlider(QppEditorText.T("太さ", "Width", "두께"), previewWidthIndex, 0, QppCommon.MAX_WIDTH_INDEX);
             EditorGUILayout.LabelField(targetPalette.MillimetersTextOf(previewWidthIndex), GUILayout.Width(75f));
             EditorGUILayout.EndHorizontal();
 
@@ -252,7 +253,7 @@ namespace Yakigura.QvPalette.Editor
             if (!QppInkPreviewLogic.HasMaterial(material))
             {
                 EditorGUI.DrawRect(rect, QppInkPreviewLogic.BackgroundColor(previewBackground));
-                GUI.Label(rect, "Material 未設定", EditorStyles.centeredGreyMiniLabel);
+                GUI.Label(rect, QppEditorText.T("Material 未設定", "Material not set", "Material 미설정"), EditorStyles.centeredGreyMiniLabel);
                 return;
             }
             if (Event.current.type != EventType.Repaint) return;
@@ -275,42 +276,49 @@ namespace Yakigura.QvPalette.Editor
         {
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField($"インク {inks.Count} / {QppInkData.MaxInks}", EditorStyles.boldLabel, GUILayout.Width(140));
+            EditorGUILayout.LabelField(QppEditorText.T($"インク {inks.Count} / {QppInkData.MaxInks}", $"Inks {inks.Count} / {QppInkData.MaxInks}", $"잉크 {inks.Count} / {QppInkData.MaxInks}"), EditorStyles.boldLabel, GUILayout.Width(140));
             GUILayout.FlexibleSpace();
             using (new EditorGUI.DisabledScope(inks.Count >= QppInkData.MaxInks))
             {
-                if (GUILayout.Button("＋ インク追加", GUILayout.Width(100))) AddInk();
+                if (GUILayout.Button(QppEditorText.T("＋ インク追加", "+ Add ink", "+ 잉크 추가"), GUILayout.Width(100))) AddInk();
             }
-            if (GUILayout.Button("ファイルに書き出す", GUILayout.Width(120))) ExportFile(inks, tagNames, "palette");
-            if (GUILayout.Button("ファイルから取り込む…", GUILayout.Width(130))) ImportFile();
+            if (GUILayout.Button(QppEditorText.T("ファイルに書き出す", "Export to file", "파일로 내보내기"), GUILayout.Width(120))) ExportFile(inks, tagNames, "palette");
+            if (GUILayout.Button(QppEditorText.T("ファイルから取り込む…", "Import from file...", "파일에서 가져오기..."), GUILayout.Width(130))) ImportFile();
             EditorGUILayout.EndHorizontal();
         }
 
         private void DrawQvPenSection()
         {
-            qvpenFoldout = EditorGUILayout.Foldout(qvpenFoldout, "QvPen のインクを使う", true, EditorStyles.foldoutHeader);
+            qvpenFoldout = EditorGUILayout.Foldout(qvpenFoldout, QppEditorText.T("QvPen のインクを使う", "Use QvPen inks", "QvPen 잉크 사용"), true, EditorStyles.foldoutHeader);
             if (!qvpenFoldout) return;
 
             EditorGUI.indentLevel++;
             qvpenSource = (GameObject)EditorGUILayout.ObjectField(
-                new GUIContent("読み込み元", "QvPen のペンや、ペンをまとめた Prefab。空ならシーン内のすべてのペン。"),
+                new GUIContent(QppEditorText.T("読み込み元", "Source", "가져올 대상"), QppEditorText.T("QvPen のペンや、ペンをまとめた Prefab。空ならシーン内のすべてのペン。", "A QvPen pen or a Prefab that bundles pens. If empty, all pens in the scene.", "QvPen 펜 또는 펜을 모아 둔 Prefab. 비어 있으면 씬의 모든 펜.")),
                 qvpenSource, typeof(GameObject), true);
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(EditorGUI.indentLevel * 15f);
-            if (GUILayout.Button("インクを選んで取り込む…")) ImportQvPen();
-            if (GUILayout.Button("ファイルに書き出す")) ExportQvPen();
+            if (GUILayout.Button(QppEditorText.T("インクを選んで取り込む…", "Choose inks to import...", "잉크를 선택해 가져오기..."))) ImportQvPen();
+            if (GUILayout.Button(QppEditorText.T("ファイルに書き出す", "Export to file", "파일로 내보내기"))) ExportQvPen();
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.HelpBox(
-                "QvPen の各ペンの色（グラデーション）と Material を読みます。同じ色・同じ Material のペンは 1 つにまとめます。" +
-                "シーンのペンの Material は再バインド時にパレット先頭のものへ書き換わるため、元の Material を使いたいときは" +
-                "ペンの Prefab を読み込み元に指定してください。",
+                QppEditorText.T(
+                    "QvPen の各ペンの色（グラデーション）と Material を読みます。同じ色・同じ Material のペンは 1 つにまとめます。" +
+                    "シーンのペンの Material は再バインド時にパレット先頭のものへ書き換わるため、元の Material を使いたいときは" +
+                    "ペンの Prefab を読み込み元に指定してください。",
+                    "Reads the color (gradient) and Material of each QvPen pen. Pens with the same color and Material are merged into one. " +
+                    "Because the Material of scene pens is overwritten with the first palette Material on rebind, " +
+                    "specify the pen Prefab as the source if you want to keep the original Material.",
+                    "QvPen 각 펜의 색(그라디언트)과 Material을 읽어요. 같은 색, 같은 Material의 펜은 하나로 합쳐요. " +
+                    "씬 펜의 Material은 다시 바인딩할 때 팔레트 맨 앞의 것으로 바뀌므로, 원래 Material을 쓰려면 " +
+                    "펜의 Prefab을 가져올 대상으로 지정해 주세요."),
                 MessageType.None);
             EditorGUI.indentLevel--;
         }
 
         private void DrawTagSection()
         {
-            tagsFoldout = EditorGUILayout.Foldout(tagsFoldout, $"タグ（{tagNames.Length} / {QppPalette.MAX_TAGS}、パネルで絞り込み）", true,
+            tagsFoldout = EditorGUILayout.Foldout(tagsFoldout, QppEditorText.T($"タグ（{tagNames.Length} / {QppPalette.MAX_TAGS}、パネルで絞り込み）", $"Tags ({tagNames.Length} / {QppPalette.MAX_TAGS}, filter on panel)", $"태그 ({tagNames.Length} / {QppPalette.MAX_TAGS}, 패널에서 필터링)"), true,
                 EditorStyles.foldoutHeader);
             if (!tagsFoldout) return;
 
@@ -322,8 +330,8 @@ namespace Yakigura.QvPalette.Editor
                     if (ink.tags.Contains(tagNames[t])) used++;
 
                 EditorGUILayout.BeginHorizontal();
-                string renamed = EditorGUILayout.DelayedTextField($"タグ {t + 1}", tagNames[t]);
-                EditorGUILayout.LabelField($"{used} 個", GUILayout.Width(50));
+                string renamed = EditorGUILayout.DelayedTextField(QppEditorText.T($"タグ {t + 1}", $"Tag {t + 1}", $"태그 {t + 1}"), tagNames[t]);
+                EditorGUILayout.LabelField(QppEditorText.T($"{used} 個", $"{used} inks", $"{used}개"), GUILayout.Width(50));
                 bool remove = GUILayout.Button("×", GUILayout.Width(22));
                 EditorGUILayout.EndHorizontal();
 
@@ -339,7 +347,7 @@ namespace Yakigura.QvPalette.Editor
                     Commit("Rename Palette Tag");
                 }
                 if (remove && (used == 0 || EditorUtility.DisplayDialog("QvPalette",
-                        $"タグ「{tagNames[t]}」を削除し、{used} 個のインクから外します。よろしいですか？", "削除", "やめる")))
+                        QppEditorText.T($"タグ「{tagNames[t]}」を削除し、{used} 個のインクから外します。よろしいですか？", $"Delete tag '{tagNames[t]}' and remove it from {used} inks. Are you sure?", $"태그 '{tagNames[t]}'을(를) 삭제하고 잉크 {used}개에서 제거해요. 계속할까요?"), QppEditorText.T("削除", "Delete", "삭제"), QppEditorText.T("やめる", "Cancel", "취소"))))
                 {
                     foreach (var ink in inks) ink.tags.Remove(tagNames[t]);
                     var rest = new List<string>(tagNames);
@@ -356,18 +364,18 @@ namespace Yakigura.QvPalette.Editor
             GUILayout.Space(EditorGUI.indentLevel * 15f);
             using (new EditorGUI.DisabledScope(tagNames.Length >= QppPalette.MAX_TAGS))
             {
-                if (GUILayout.Button("＋ タグ追加"))
+                if (GUILayout.Button(QppEditorText.T("＋ タグ追加", "+ Add tag", "+ 태그 추가")))
                 {
-                    var more = new List<string>(tagNames) { UniqueTagName("新しいタグ") };
+                    var more = new List<string>(tagNames) { UniqueTagName(QppEditorText.T("新しいタグ", "New tag", "새 태그")) };
                     tagNames = more.ToArray();
                     Commit("Add Palette Tag");
                 }
             }
-            if (GUILayout.Button("色から自動タグ付け"))
+            if (GUILayout.Button(QppEditorText.T("色から自動タグ付け", "Auto-tag by color", "색으로 자동 태그")))
             {
                 if (EditorUtility.DisplayDialog("QvPalette",
-                        "すべてのインクの既定タグ（赤・青・パステルなど）を色から付け直します。自分で作ったタグはそのままです。",
-                        "付け直す", "やめる"))
+                        QppEditorText.T("すべてのインクの既定タグ（赤・青・パステルなど）を色から付け直します。自分で作ったタグはそのままです。", "Re-apply the default tags (red, blue, pastel, etc.) to all inks based on color. Tags you created yourself are kept.", "모든 잉크의 기본 태그(빨강, 파랑, 파스텔 등)를 색에 따라 다시 붙여요. 직접 만든 태그는 그대로 둬요."),
+                        QppEditorText.T("付け直す", "Re-apply", "다시 붙이기"), QppEditorText.T("やめる", "Cancel", "취소")))
                 {
                     foreach (var ink in inks) QppInkData.ApplyAutoTags(ink, tagNames);
                     Commit("Auto Tag Palette");
@@ -376,8 +384,13 @@ namespace Yakigura.QvPalette.Editor
             }
             EditorGUILayout.EndHorizontal();
             EditorGUILayout.HelpBox(
-                "タグは最大 27 個（パネルでは 9 個ずつ 3 ページ）。パネル右端のボタンで、そのタグのインクだけを表示します。" +
-                "自動タグ付けは既定のタグ名（" + string.Join(" / ", DefaultTagNames) + "）のうち、ここにあるものだけを付けます。",
+                QppEditorText.T(
+                    "タグは最大 27 個（パネルでは 9 個ずつ 3 ページ）。パネル右端のボタンで、そのタグのインクだけを表示します。" +
+                    "自動タグ付けは既定のタグ名（" + string.Join(" / ", DefaultTagNames) + "）のうち、ここにあるものだけを付けます。",
+                    "Up to 27 tags (3 pages of 9 on the panel). The button at the right edge of the panel shows only the inks with that tag. " +
+                    "Auto-tagging only applies the default tag names (" + string.Join(" / ", DefaultTagNames) + ") that exist here.",
+                    "태그는 최대 27개예요(패널에서는 9개씩 3페이지). 패널 오른쪽 끝의 버튼으로 해당 태그의 잉크만 표시해요. " +
+                    "자동 태그는 기본 태그 이름(" + string.Join(" / ", DefaultTagNames) + ") 중 여기에 있는 것만 붙여요."),
                 MessageType.None);
             EditorGUI.indentLevel--;
         }
@@ -391,16 +404,16 @@ namespace Yakigura.QvPalette.Editor
 
         private void DrawHsvSection()
         {
-            hsvFoldout = EditorGUILayout.Foldout(hsvFoldout, "補助: HSV で一括生成（すべて置き換え）", true, EditorStyles.foldoutHeader);
+            hsvFoldout = EditorGUILayout.Foldout(hsvFoldout, QppEditorText.T("補助: HSV で一括生成（すべて置き換え）", "Helper: Generate all from HSV (replaces everything)", "보조: HSV로 일괄 생성(모두 교체)"), true, EditorStyles.foldoutHeader);
             if (!hsvFoldout) return;
 
             EditorGUI.indentLevel++;
-            generateColorCount = EditorGUILayout.IntSlider("生成色数", generateColorCount, 16, QppInkData.MaxInks);
+            generateColorCount = EditorGUILayout.IntSlider(QppEditorText.T("生成色数", "Color count", "생성 색 수"), generateColorCount, 16, QppInkData.MaxInks);
             EditorGUILayout.BeginHorizontal();
             GUILayout.Space(EditorGUI.indentLevel * 15f);
-            if (GUILayout.Button($"HSVカラー一括生成 ({generateColorCount}色)") &&
+            if (GUILayout.Button(QppEditorText.T($"HSVカラー一括生成 ({generateColorCount}色)", $"Generate HSV colors ({generateColorCount})", $"HSV 색 일괄 생성 ({generateColorCount}색)")) &&
                 EditorUtility.DisplayDialog("QvPalette",
-                    "現在のインクをすべて置き換えます。よろしいですか？", "置き換える", "やめる"))
+                    QppEditorText.T("現在のインクをすべて置き換えます。よろしいですか？", "This replaces all current inks. Are you sure?", "현재 잉크를 모두 교체해요. 계속할까요?"), QppEditorText.T("置き換える", "Replace", "교체"), QppEditorText.T("やめる", "Cancel", "취소")))
             {
                 GenerateHSVColors(targetPalette, generateColorCount);
                 loadedPalette = null;
@@ -412,13 +425,14 @@ namespace Yakigura.QvPalette.Editor
 
         private void DrawInkList()
         {
+            tagRowsCache = -1;
             EditorGUILayout.Space();
             EditorGUILayout.BeginHorizontal();
-            var options = new List<string> { "すべて" };
+            var options = new List<string> { QppEditorText.T("すべて", "All", "전체") };
             options.AddRange(tagNames);
-            options.Add("タグなし");
+            options.Add(QppEditorText.T("タグなし", "No tag", "태그 없음"));
             int popupIndex = filter == FilterAll ? 0 : filter == FilterUntagged ? options.Count - 1 : filter + 1;
-            int newIndex = EditorGUILayout.Popup("表示するインク", popupIndex, options.ToArray());
+            int newIndex = EditorGUILayout.Popup(QppEditorText.T("表示するインク", "Inks to show", "표시할 잉크"), popupIndex, options.ToArray());
             EditorGUILayout.EndHorizontal();
             if (newIndex != popupIndex)
             {
@@ -428,12 +442,12 @@ namespace Yakigura.QvPalette.Editor
 
             EditorGUILayout.BeginHorizontal();
             bulkMaterial = (Material)EditorGUILayout.ObjectField(
-                new GUIContent("Material 一括設定", "表示中のインクすべての Material を変える。"), bulkMaterial, typeof(Material), false);
+                new GUIContent(QppEditorText.T("Material 一括設定", "Set Material in bulk", "Material 일괄 설정"), QppEditorText.T("表示中のインクすべての Material を変える。", "Changes the Material of all shown inks.", "표시 중인 모든 잉크의 Material을 바꿔요.")), bulkMaterial, typeof(Material), false);
             bulkQuestMaterial = (Material)EditorGUILayout.ObjectField(
-                new GUIContent("", "Quest 用（空なら PC と同じ）"), bulkQuestMaterial, typeof(Material), false, GUILayout.Width(140));
+                new GUIContent("", QppEditorText.T("Quest 用（空なら PC と同じ）", "For Quest (same as PC if empty)", "Quest용 (비어 있으면 PC와 동일)")), bulkQuestMaterial, typeof(Material), false, GUILayout.Width(140));
             using (new EditorGUI.DisabledScope(bulkMaterial == null || picked.Count == 0))
             {
-                if (GUILayout.Button($"選択中の {picked.Count} 個に適用", GUILayout.Width(130)))
+                if (GUILayout.Button(QppEditorText.T($"選択中の {picked.Count} 個に適用", $"Apply to {picked.Count} selected", $"선택한 {picked.Count}개에 적용"), GUILayout.Width(130)))
                 {
                     foreach (int i in picked)
                     {
@@ -446,7 +460,7 @@ namespace Yakigura.QvPalette.Editor
             }
             using (new EditorGUI.DisabledScope(bulkMaterial == null || view.Count == 0))
             {
-                if (GUILayout.Button($"表示中の {view.Count} 個に適用", GUILayout.Width(130)))
+                if (GUILayout.Button(QppEditorText.T($"表示中の {view.Count} 個に適用", $"Apply to {view.Count} shown", $"표시 중인 {view.Count}개에 적용"), GUILayout.Width(130)))
                 {
                     foreach (int i in view)
                     {
@@ -461,26 +475,33 @@ namespace Yakigura.QvPalette.Editor
             // 複数選択の操作。
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.LabelField(
-                new GUIContent($"選択中 {picked.Count} 個", "行をクリックで選択。Ctrl+クリックで追加・解除、Shift+クリックで範囲。Delete キーで削除。"),
+                new GUIContent(QppEditorText.T($"選択中 {picked.Count} 個", $"Selected {picked.Count}", $"선택됨 {picked.Count}개"), QppEditorText.T("行をクリックで選択。Ctrl+クリックで追加・解除、Shift+クリックで範囲。Delete キーで削除。", "Click a row to select. Ctrl+click to add/remove, Shift+click for a range. Delete key to delete.", "행을 클릭해 선택해요. Ctrl+클릭으로 추가/해제, Shift+클릭으로 범위 선택. Delete 키로 삭제해요.")),
                 GUILayout.Width(100));
-            if (GUILayout.Button("表示中をすべて選択", GUILayout.Width(130)) && list != null && view.Count > 0)
+            if (GUILayout.Button(QppEditorText.T("表示中をすべて選択", "Select all shown", "표시 중인 항목 모두 선택"), GUILayout.Width(130)) && list != null && view.Count > 0)
             {
                 list.SelectRange(0, view.Count - 1);
                 SyncPicked();
             }
             using (new EditorGUI.DisabledScope(picked.Count == 0))
             {
-                if (GUILayout.Button("選択を解除", GUILayout.Width(90))) ClearPicked();
-                if (GUILayout.Button("選択を削除（Delete キー）", GUILayout.Width(170))) DeletePicked();
+                if (GUILayout.Button(QppEditorText.T("選択を解除", "Deselect", "선택 해제"), GUILayout.Width(90))) ClearPicked();
+                if (GUILayout.Button(QppEditorText.T("選択を削除（Delete キー）", "Delete selected (Delete key)", "선택 항목 삭제 (Delete 키)"), GUILayout.Width(170))) DeletePicked();
             }
             EditorGUILayout.EndHorizontal();
 
             EditorGUILayout.HelpBox(
                 filter == FilterAll
-                    ? "左端の ≡ をドラッグするか、番号を書き換えると並べ替えられます。並び順がパネルの表示順です。" +
-                      "行をクリックで選択（Ctrl+クリックで追加、Shift+クリックで範囲）。選んだインクは、Delete キーで削除、Material は「選択中の個数に適用」でまとめて変えられます。" +
-                      "公開済みのワールドで並べ替え・削除すると、プレイヤーが保存したお気に入りが別のインクを指すことがあります。"
-                    : "絞り込み中はドラッグで並べ替えできません（番号の書き換えはできます）。",
+                    ? QppEditorText.T(
+                        "左端の ≡ をドラッグするか、番号を書き換えると並べ替えられます。並び順がパネルの表示順です。" +
+                        "行をクリックで選択（Ctrl+クリックで追加、Shift+クリックで範囲）。選んだインクは、Delete キーで削除、Material は「選択中の個数に適用」でまとめて変えられます。" +
+                        "公開済みのワールドで並べ替え・削除すると、プレイヤーが保存したお気に入りが別のインクを指すことがあります。",
+                        "Drag the ≡ at the left edge or edit the number to reorder. The order is the display order on the panel. " +
+                        "Click a row to select (Ctrl+click to add, Shift+click for a range). Selected inks can be deleted with the Delete key, and their Material changed together with \"Apply to selected\". " +
+                        "Reordering or deleting in a published world may make players' saved favorites point to different inks.",
+                        "왼쪽 끝의 ≡를 드래그하거나 번호를 고치면 순서를 바꿀 수 있어요. 순서가 패널의 표시 순서예요. " +
+                        "행을 클릭해 선택해요(Ctrl+클릭으로 추가, Shift+클릭으로 범위). 선택한 잉크는 Delete 키로 삭제하고, Material은 \"선택한 항목에 적용\"으로 한꺼번에 바꿀 수 있어요. " +
+                        "공개된 월드에서 순서를 바꾸거나 삭제하면, 플레이어가 저장한 즐겨찾기가 다른 잉크를 가리킬 수 있어요.")
+                    : QppEditorText.T("絞り込み中はドラッグで並べ替えできません（番号の書き換えはできます）。", "Drag reordering is unavailable while filtering (you can still edit the number).", "필터링 중에는 드래그로 순서를 바꿀 수 없어요(번호는 고칠 수 있어요)."),
                 MessageType.None);
 
             scrollPos = EditorGUILayout.BeginScrollView(scrollPos, GUILayout.ExpandHeight(true));
@@ -493,11 +514,44 @@ namespace Yakigura.QvPalette.Editor
         private static float ElementHeight => Line * 3f + 10f;
         private static float OutlinedElementHeight => Line * 4f + 13f;
 
+        // タグのボタンは、幅に入らないときは次の行へ折り返す。行数はどのインクでも同じなので、描画ごとに 1 回だけ数える。
+        private int tagRowsCache = -1;
+
+        private static float TagButtonWidth(string tagName)
+        {
+            return Mathf.Max(36f, EditorStyles.miniButton.CalcSize(new GUIContent(tagName)).x + 14f);
+        }
+
+        /// <summary>タグのボタンを幅 width に並べたときの行数（最低 1）。</summary>
+        private int TagRows(float width)
+        {
+            int rows = 1;
+            float x = 0f;
+            for (int t = 0; t < tagNames.Length; t++)
+            {
+                float w = TagButtonWidth(tagNames[t]);
+                if (x > 0f && x + w > width)
+                {
+                    rows++;
+                    x = 0f;
+                }
+                x += w + 2f;
+            }
+            return rows;
+        }
+
+        private float ElementHeightOf(bool outlined)
+        {
+            // 行の幅は、描画側の rect.width より少し狭めに見積もる（見積もりが多めの行数になるだけで、はみ出さない）。
+            if (tagRowsCache < 0) tagRowsCache = TagRows(Mathf.Max(100f, EditorGUIUtility.currentViewWidth - 70f));
+            return (outlined ? OutlinedElementHeight : ElementHeight) + (tagRowsCache - 1) * (Line + 2f);
+        }
+
         private void DrawElement(Rect rect, int viewIndex, bool isActive, bool isFocused)
         {
             // 見えていない行は描かない（4096 個でも重くならないように）。
-            if (rect.yMax < scrollPos.y - OutlinedElementHeight ||
-                rect.y > scrollPos.y + scrollViewHeight + OutlinedElementHeight) return;
+            if (rect.yMax < scrollPos.y - rect.height ||
+                rect.y > scrollPos.y + scrollViewHeight + rect.height) return;
             if (viewIndex >= view.Count) return;
 
             int i = view[viewIndex];
@@ -513,14 +567,14 @@ namespace Yakigura.QvPalette.Editor
 
             // 1 行目: 番号 / 名前 / 色 / 単色化 / 複製 / 削除
             int moved = EditorGUI.DelayedIntField(new Rect(x, y, 42f, Line),
-                new GUIContent("", "インク番号。書き換えるとその位置へ移動する。"), i);
+                new GUIContent("", QppEditorText.T("インク番号。書き換えるとその位置へ移動する。", "Ink number. Editing it moves the ink to that position.", "잉크 번호. 고치면 그 위치로 이동해요.")), i);
             x += 46f;
             string name = EditorGUI.TextField(new Rect(x, y, 110f, Line), ink.name);
             x += 114f;
-            bool remove = GUI.Button(new Rect(right - 22f, y, 22f, Line), new GUIContent("×", "このインクを削除"));
-            bool duplicate = GUI.Button(new Rect(right - 68f, y, 42f, Line), "複製");
+            bool remove = GUI.Button(new Rect(right - 22f, y, 22f, Line), new GUIContent("×", QppEditorText.T("このインクを削除", "Delete this ink", "이 잉크 삭제")));
+            bool duplicate = GUI.Button(new Rect(right - 68f, y, 42f, Line), QppEditorText.T("複製", "Copy", "복제"));
             bool flatten = GUI.Button(new Rect(right - 124f, y, 52f, Line),
-                new GUIContent("単色化", "左端の色で両端をそろえる"));
+                new GUIContent(QppEditorText.T("単色化", "Solid", "단색화"), QppEditorText.T("左端の色で両端をそろえる", "Make both ends the same as the left color", "왼쪽 끝 색으로 양끝을 맞춰요")));
             Gradient grad = EditorGUI.GradientField(new Rect(x, y, Mathf.Max(40f, right - 128f - x), Line), ink.gradient);
 
             // 2 行目: Material（PC / Quest）
@@ -529,7 +583,7 @@ namespace Yakigura.QvPalette.Editor
             EditorGUI.LabelField(new Rect(rect.x, y, 64f, Line), "Material");
             Material pc = (Material)EditorGUI.ObjectField(new Rect(rect.x + 64f, y, half - 64f, Line), ink.material,
                 typeof(Material), false);
-            EditorGUI.LabelField(new Rect(rect.x + half + 4f, y, 46f, Line), new GUIContent("Quest", "空なら PC と同じ"));
+            EditorGUI.LabelField(new Rect(rect.x + half + 4f, y, 46f, Line), new GUIContent("Quest", QppEditorText.T("空なら PC と同じ", "Same as PC if empty", "비어 있으면 PC와 동일")));
             Material quest = (Material)EditorGUI.ObjectField(new Rect(rect.x + half + 50f, y, half - 50f, Line),
                 ink.questMaterial, typeof(Material), false);
 
@@ -538,12 +592,16 @@ namespace Yakigura.QvPalette.Editor
             x = rect.x;
             bool tagsChanged = false;
             if (tagNames.Length == 0)
-                EditorGUI.LabelField(new Rect(x, y, 200f, Line), "（タグなし）", EditorStyles.miniLabel);
+                EditorGUI.LabelField(new Rect(x, y, 200f, Line), QppEditorText.T("（タグなし）", "(no tags)", "(태그 없음)"), EditorStyles.miniLabel);
             for (int t = 0; t < tagNames.Length; t++)
             {
                 bool on = ink.tags.Contains(tagNames[t]);
-                float w = Mathf.Max(36f, EditorStyles.miniButton.CalcSize(new GUIContent(tagNames[t])).x + 14f);
-                if (x + w > right) break;
+                float w = TagButtonWidth(tagNames[t]);
+                if (x > rect.x && x + w > right)
+                {
+                    x = rect.x;
+                    y += Line + 2f;
+                }
                 bool next = GUI.Toggle(new Rect(x, y, w, Line), on, (on ? "✔" : "") + tagNames[t], EditorStyles.miniButton);
                 x += w + 2f;
                 if (next == on) continue;
@@ -559,9 +617,9 @@ namespace Yakigura.QvPalette.Editor
             {
                 y += Line + 3f;
                 x = rect.x;
-                EditorGUI.LabelField(new Rect(x, y, 64f, Line), new GUIContent("縁取り", "アウトラインの太さと色"));
+                EditorGUI.LabelField(new Rect(x, y, 64f, Line), new GUIContent(QppEditorText.T("縁取り", "Outline", "테두리"), QppEditorText.T("アウトラインの太さと色", "Outline width and color", "아웃라인의 두께와 색")));
                 x += 64f;
-                EditorGUI.LabelField(new Rect(x, y, 30f, Line), new GUIContent("太さ", "インクの太さに対する比率"));
+                EditorGUI.LabelField(new Rect(x, y, 30f, Line), new GUIContent(QppEditorText.T("太さ", "Width", "두께"), QppEditorText.T("インクの太さに対する比率", "Ratio to the ink width", "잉크 두께에 대한 비율")));
                 x += 30f;
                 float ratio = EditorGUI.Slider(new Rect(x, y, 150f, Line), ink.outlineRatio, 0f, 3f);
                 x += 156f;
@@ -574,7 +632,7 @@ namespace Yakigura.QvPalette.Editor
                 bool custom = QppInkData.UsesCustomOutlineColor(ink.material);
                 if (custom)
                 {
-                    EditorGUI.LabelField(new Rect(x, y, 22f, Line), "色");
+                    EditorGUI.LabelField(new Rect(x, y, 22f, Line), QppEditorText.T("色", "Color", "색"));
                     Color c = EditorGUI.ColorField(new Rect(x + 22f, y, 70f, Line), ink.outlineColor);
                     if (c != ink.outlineColor)
                     {
@@ -582,20 +640,20 @@ namespace Yakigura.QvPalette.Editor
                         outlineChanged = true;
                     }
                     if (GUI.Button(new Rect(right - 96f, y, 96f, Line),
-                            new GUIContent("線の色から作る", "線の色の明るさなどをずらして縁の色にする（Material を切り替える）")))
+                            new GUIContent(QppEditorText.T("線の色から作る", "From line color", "선 색에서 만들기"), QppEditorText.T("線の色の明るさなどをずらして縁の色にする（Material を切り替える）", "Shift the brightness etc. of the line color to make the outline color (switches the Material)", "선 색의 밝기 등을 조정해 테두리 색으로 해요(Material을 전환해요)"))))
                         switchTo = QppInkData.OutlineColorVariant(ink.material, false);
                 }
                 else
                 {
                     float fieldWidth = Mathf.Max(30f, (right - 100f - x) / 3f - 36f);
                     Vector3 s = ink.outlineShift;
-                    EditorGUI.LabelField(new Rect(x, y, 34f, Line), "色相");
+                    EditorGUI.LabelField(new Rect(x, y, 34f, Line), QppEditorText.T("色相", "Hue", "색상"));
                     s.x = EditorGUI.FloatField(new Rect(x + 34f, y, fieldWidth, Line), s.x);
                     x += 36f + fieldWidth;
-                    EditorGUI.LabelField(new Rect(x, y, 34f, Line), "彩度");
+                    EditorGUI.LabelField(new Rect(x, y, 34f, Line), QppEditorText.T("彩度", "Sat", "채도"));
                     s.y = EditorGUI.FloatField(new Rect(x + 34f, y, fieldWidth, Line), s.y);
                     x += 36f + fieldWidth;
-                    EditorGUI.LabelField(new Rect(x, y, 34f, Line), "明るさ");
+                    EditorGUI.LabelField(new Rect(x, y, 34f, Line), QppEditorText.T("明るさ", "Value", "밝기"));
                     s.z = EditorGUI.FloatField(new Rect(x + 34f, y, fieldWidth, Line), s.z);
                     s = new Vector3(Mathf.Clamp(s.x, -1f, 1f), Mathf.Clamp(s.y, -1f, 1f), Mathf.Clamp(s.z, -1f, 1f));
                     if (s != ink.outlineShift)
@@ -604,7 +662,7 @@ namespace Yakigura.QvPalette.Editor
                         outlineChanged = true;
                     }
                     if (GUI.Button(new Rect(right - 96f, y, 96f, Line),
-                            new GUIContent("色を指定する", "縁の色を直接指定する（色指定用の Material に切り替える）")))
+                            new GUIContent(QppEditorText.T("色を指定する", "Set color", "색 지정"), QppEditorText.T("縁の色を直接指定する（色指定用の Material に切り替える）", "Specify the outline color directly (switches to a color-specifiable Material)", "테두리 색을 직접 지정해요(색 지정용 Material로 전환해요)"))))
                         switchTo = QppInkData.OutlineColorVariant(ink.material, true);
                 }
             }
@@ -710,10 +768,17 @@ namespace Yakigura.QvPalette.Editor
             if (picked.Count == 0) return;
             int count = picked.Count;
             if (!EditorUtility.DisplayDialog("QvPalette",
-                    $"選んだ {count} 個のインクを削除します。\n" +
-                    "公開済みのワールドで削除すると、プレイヤーが保存したお気に入りが別のインクを指すことがあります。\n" +
-                    "（Ctrl+Z で元に戻せます）",
-                    "削除する", "やめる")) return;
+                    QppEditorText.T(
+                        $"選んだ {count} 個のインクを削除します。\n" +
+                        "公開済みのワールドで削除すると、プレイヤーが保存したお気に入りが別のインクを指すことがあります。\n" +
+                        "（Ctrl+Z で元に戻せます）",
+                        $"Delete the {count} selected inks.\n" +
+                        "Deleting in a published world may make players' saved favorites point to different inks.\n" +
+                        "(You can undo with Ctrl+Z)",
+                        $"선택한 잉크 {count}개를 삭제해요.\n" +
+                        "공개된 월드에서 삭제하면, 플레이어가 저장한 즐겨찾기가 다른 잉크를 가리킬 수 있어요.\n" +
+                        "(Ctrl+Z로 되돌릴 수 있어요)"),
+                    QppEditorText.T("削除する", "Delete", "삭제"), QppEditorText.T("やめる", "Cancel", "취소"))) return;
             QppInkSelection.RemoveSelected(inks, picked);
             ClearPicked();
             previewInk = null;
@@ -755,7 +820,7 @@ namespace Yakigura.QvPalette.Editor
 
         private static void ExportFile(List<QppInk> source, string[] tags, string defaultName)
         {
-            string path = EditorUtility.SaveFilePanel("インクをファイルに書き出す", "", defaultName + "." + QppInkData.FileExtension,
+            string path = EditorUtility.SaveFilePanel(QppEditorText.T("インクをファイルに書き出す", "Export inks to file", "잉크를 파일로 내보내기"), "", defaultName + "." + QppInkData.FileExtension,
                 QppInkData.FileExtension);
             if (string.IsNullOrEmpty(path)) return;
             File.WriteAllText(path, QppInkData.ToJson(source, tags), new UTF8Encoding(false));
@@ -764,7 +829,7 @@ namespace Yakigura.QvPalette.Editor
 
         private void ImportFile()
         {
-            string path = EditorUtility.OpenFilePanel("インクファイルを開く", "", QppInkData.FileExtension);
+            string path = EditorUtility.OpenFilePanel(QppEditorText.T("インクファイルを開く", "Open ink file", "잉크 파일 열기"), "", QppInkData.FileExtension);
             if (string.IsNullOrEmpty(path) || !File.Exists(path)) return;
 
             QppInkData.FileContent content;
@@ -786,7 +851,7 @@ namespace Yakigura.QvPalette.Editor
             var found = QppInkData.ReadQvPen(qvpenSource);
             if (found.Count == 0)
                 EditorUtility.DisplayDialog("QvPalette",
-                    qvpenSource != null ? $"「{qvpenSource.name}」に QvPen のペンが見つかりません。" : "シーンに QvPen のペンが見つかりません。",
+                    qvpenSource != null ? QppEditorText.T($"「{qvpenSource.name}」に QvPen のペンが見つかりません。", $"No QvPen pens found in '{qvpenSource.name}'.", $"'{qvpenSource.name}'에서 QvPen 펜을 찾을 수 없어요.") : QppEditorText.T("シーンに QvPen のペンが見つかりません。", "No QvPen pens found in the scene.", "씬에서 QvPen 펜을 찾을 수 없어요."),
                     "OK");
             return found;
         }
@@ -795,7 +860,7 @@ namespace Yakigura.QvPalette.Editor
         {
             var found = ReadQvPenOrWarn();
             if (found.Count == 0) return;
-            QppInkImportWindow.Open(targetPalette, qvpenSource != null ? qvpenSource.name : "シーン内の QvPen", found, null, null,
+            QppInkImportWindow.Open(targetPalette, qvpenSource != null ? qvpenSource.name : QppEditorText.T("シーン内の QvPen", "QvPen in scene", "씬의 QvPen"), found, null, null,
                 true);
         }
 

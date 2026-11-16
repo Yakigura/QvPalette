@@ -39,12 +39,12 @@ namespace Yakigura.QvPalette
             }
         }
 
-        public void Seed(int defaultWidthIndex)
+        public void Seed(int defaultStyleId, int defaultWidthIndex)
         {
             EnsureArrays();
             if (count > 0 && keys[0] == 0) return;
             keys[0] = 0;
-            vals[0] = (0 << 10) | (defaultWidthIndex & 0x03FF);
+            vals[0] = ((defaultStyleId & 0x0FFF) << 10) | (defaultWidthIndex & 0x03FF);
             if (count == 0) count = 1;
         }
 

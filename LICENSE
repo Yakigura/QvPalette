@@ -68,3 +68,156 @@ Copyright (c) 2026 やきたてぐらふてぃ (Negiyaki). All rights reserved.
    この規約は、将来のバージョンで、または随時、変更されることがあります。変更後の規約は、頒布ページと配布元のリポジトリに掲載した時点から、
    すでに入手した版を含め、すべての版に適用されます。変更後に本アセットを利用した場合は、変更後の規約に同意したものとみなします。
    最新の規約は、頒布ページと、配布元のリポジトリ（Yakigura/QvPalette の LICENSE）でご確認ください。
+
+================================================================
+English (reference translation)
+================================================================
+
+Reference translation. The Japanese text is the authoritative version. If there is any difference, the Japanese text prevails.
+
+QvPalette Terms of Use
+Last updated: November 5, 2026
+
+Copyright (c) 2026 やきたてぐらふてぃ (Negiyaki). All rights reserved.
+
+By downloading or using this package (hereinafter "this Asset"), you shall be deemed to have agreed to these Terms.
+
+1. Permitted Uses
+   a. Incorporating this Asset into a VRChat world and uploading or publishing that world, whether Private or Public.
+      Use in commercial worlds and event worlds is also permitted. For use as a corporate entity, please consult the Distributor individually.
+   b. Modifying or customizing this Asset to fit the specifications, design, key assignments, etc. of your own world.
+   c. Video recording, streaming, and posting to social media (including monetization) in a world that incorporates this Asset. Credit attribution is optional.
+
+2. Prohibited Uses
+   a. Making this Asset itself, or a modified version of it, available for download by third parties anywhere other than the Distributor (Yakigura/vpm-qvpalette, Yakigura/QvPalette, Yakigura/QvInkPreview, and the BOOTH distribution page)
+      (including redistribution, resale, re-sharing of the UnityPackage, publication in a public repository or VPM listing, and incorporation into a Public avatar).
+   b. Violating Article 6 (Prohibition of Analysis Using Generative AI, etc.) or Article 7 (Prohibition of Reverse Engineering, etc.).
+   c. Use intended to obstruct other players' view, to grief, or to cause excessive load or crashes,
+      or use for purposes contrary to laws and regulations or to public order and morals.
+   d. Misrepresenting all or any part of this Asset as your own work.
+   e. Contacting the creator of QvPen (ureishi) regarding the specifications, installation, bugs, requests, etc. of this Asset.
+      Inquiries shall be directed to the Distributor of this Asset (developer: Negiyaki).
+
+3. Use in Commissioned Production
+   When delivering this Asset to a third party together with a Unity project, such as in commissioned production work, both the client and the contractor
+   must have legitimately obtained this Asset.
+
+4. About QvPen
+   This Asset is an unofficial extension of QvPen. QvPen is separate software, and its copyright and license
+   belong to the creator of QvPen. These Terms do not apply to QvPen. Users shall also comply with the terms of QvPen.
+
+5. About the Use of Generative AI
+   Generative AI was used in part of the production process of this Asset.
+   Generative AI was used as an aid to production; the final design, implementation, verification, and adjustment were performed by the author.
+
+6. Prohibition of Analysis Using Generative AI, etc.
+   Users shall not input, transmit, or upload all or any part of this Asset to generative AI, AI agents, machine learning services, code analysis services, or any other similar services
+   for the purpose of analyzing the internal structure, implementation methods, algorithms, operating principles, or other technical content of this Asset.
+   The scope of this prohibition includes the following:
+     ・Source code and scripts
+     ・The UnityPackage and any other files included in this Asset (including Prefabs, scenes, configuration files, and data)
+     ・Configuration data specific to this Asset
+     ・Information required to examine or reproduce the internal implementation of this Asset
+     ・Any other information provided for the purpose of analyzing, duplicating, or imitating this Asset
+   Furthermore, analyzing, reproducing, duplicating, or imitating functions, internal structures, implementation methods, etc. identical or similar to those of this Asset
+   by using AI or other tools is prohibited.
+   However, the following are not prohibited:
+     ・Consulting AI about general error messages displayed during normal use of this Asset, or about general
+       technical matters relating to Unity or VRChat.
+     ・Temporarily inputting part of this Asset into a development support tool for the purpose of installing it into, or debugging it in, the user's own world
+       (this does not include use for training, provision to third parties, or use in creating similar products).
+   Even in these cases, this Asset may not be used for creating similar products or for training AI.
+
+7. Prohibition of Reverse Engineering, etc.
+   Except where permitted by law, users shall not perform the following acts with respect to this Asset:
+     ・Reverse engineering, decompiling, or disassembling
+     ・Analysis for the purpose of extracting or reproducing implementation methods
+     ・Any other acts similar to the above
+   Modifying the scripts included in this Asset to fit your own world (Article 1 b) is not
+   subject to this Article.
+
+8. Disclaimer
+   This Asset is provided "as is." The creator shall not be liable for any trouble or damage arising from the use of this Asset.
+   This Asset may stop working without notice due to updates to VRChat or QvPen.
+
+9. Changes
+   These Terms may be changed in future versions or at any time. The changed Terms shall apply to all versions, including versions already obtained,
+   from the time they are posted on the distribution page and in the Distributor's repository. If you use this Asset after a change, you shall be deemed to have agreed to the changed Terms.
+   Please check the latest Terms on the distribution page and in the Distributor's repository (LICENSE in Yakigura/QvPalette).
+
+================================================================
+한국어 (참고용 번역)
+================================================================
+
+참고용 번역입니다. 일본어 원문이 정본이며, 차이가 있는 경우 일본어 원문이 우선합니다.
+
+QvPalette 이용 약관
+최종 수정일: 2026년 11월 5일
+
+Copyright (c) 2026 やきたてぐらふてぃ (Negiyaki). All rights reserved.
+
+본 패키지(이하 「본 에셋」)를 다운로드하거나 사용한 시점에, 본 약관에 동의한 것으로 간주합니다.
+
+1. 허용하는 행위
+   a. VRChat 월드에 본 에셋을 포함하여, Private / Public을 불문하고 업로드·공개하는 것.
+      상업용 월드, 이벤트용 월드에 도입하는 것도 가능합니다. 법인으로서의 이용은 배포처에 개별적으로 상담하여 주십시오.
+   b. 자신의 월드의 사양, 디자인, 키 할당 등에 맞추어 본 에셋을 개변·커스터마이즈하는 것.
+   c. 본 에셋을 포함한 월드에서의 동영상 촬영, 방송, SNS 게시(수익화 포함). 크레딧 표기는 임의입니다.
+
+2. 금지하는 행위
+   a. 본 에셋 자체 또는 개변한 것을 배포처(Yakigura/vpm-qvpalette, Yakigura/QvPalette, Yakigura/QvInkPreview, BOOTH의 배포 페이지) 이외의 곳에서 제3자가 다운로드할 수 있는 상태로 두는 것
+      (재배포, 재판매, UnityPackage의 재공유, 공개 저장소나 VPM 목록에서의 공개, Public 아바타에의 포함 등).
+   b. 제6조(생성형 AI 등을 이용한 해석의 금지) 또는 제7조(리버스 엔지니어링 등의 금지)에 위반하는 것.
+   c. 다른 플레이어의 시야 방해나 트롤링, 과도한 부하나 크래시를 의도한 이용,
+      법령 또는 공서양속에 반하는 목적으로의 이용.
+   d. 본 에셋의 전부 또는 일부를 자신의 창작물이라고 사칭하는 것.
+   e. 본 에셋에 관한 사양, 도입, 버그, 요청 등을 QvPen의 제작자(ureishi 님)에게 문의하는 것.
+      문의처는 본 에셋의 배포처(개발자 Negiyaki)입니다.
+
+3. 제작 대행에서의 이용
+   제작 대행 등으로 Unity 프로젝트째 제3자에게 납품하는 경우에는, 의뢰인과 수주자 쌍방이
+   본 에셋을 정당하게 입수하고 있어야 합니다.
+
+4. QvPen에 관하여
+   본 에셋은 QvPen의 비공식 확장입니다. QvPen은 별개의 소프트웨어이며, 그 저작권과 라이선스는
+   QvPen의 제작자에게 귀속됩니다. 본 약관은 QvPen에는 적용되지 않습니다. 이용자는 QvPen의 약관도 준수하여 주십시오.
+
+5. 생성형 AI의 이용에 관하여
+   본 에셋의 제작 공정의 일부에 생성형 AI를 이용하였습니다.
+   생성형 AI는 제작의 보조로서 사용하였으며, 최종적인 설계, 구현, 확인, 조정은 작자가 수행하였습니다.
+
+6. 생성형 AI 등을 이용한 해석의 금지
+   이용자는 본 에셋의 내부 구조, 구현 방법, 알고리즘, 동작 원리 기타 기술적인 내용을 해석할 목적으로,
+   생성형 AI, AI 에이전트, 머신러닝 서비스, 코드 해석 서비스, 기타 이와 유사한 서비스에
+   본 에셋의 전부 또는 일부를 입력, 송신, 업로드하여서는 안 됩니다.
+   금지 대상에는 다음을 포함합니다.
+     ・소스 코드, 스크립트
+     ・UnityPackage 기타 본 에셋에 포함된 파일(Prefab, 씬, 설정 파일, 데이터를 포함)
+     ・본 에셋 고유의 구성 데이터
+     ・본 에셋의 내부 구현을 확인·재현하기 위하여 필요한 정보
+     ・기타 본 에셋의 해석·복제·모방을 목적으로 제공되는 정보
+   또한, AI 기타 도구를 이용하여 본 에셋과 동일하거나 유사한 기능, 내부 구조, 구현 방법 등을
+   해석, 재현, 복제, 모방하는 것을 금지합니다.
+   다만, 다음 사항은 금지하지 않습니다.
+     ・본 에셋의 통상적인 이용 중에 표시된 일반적인 오류 메시지나, Unity·VRChat에 관한 일반적인
+       기술 사항에 대하여 AI에 상담하는 것.
+     ・이용자가 자신의 월드에 도입·디버그할 목적으로, 본 에셋의 일부를 개발 지원 도구에 일시적으로
+       입력하는 것(학습에의 이용, 제3자에의 제공, 유사품의 제작에 사용하는 것은 포함하지 않습니다).
+   이러한 경우에도, 본 에셋을 유사품의 제작이나 AI의 학습에 사용할 수 없습니다.
+
+7. 리버스 엔지니어링 등의 금지
+   이용자는 법령상 인정되는 경우를 제외하고, 본 에셋에 관하여 다음 행위를 하여서는 안 됩니다.
+     ・리버스 엔지니어링, 디컴파일, 디스어셈블
+     ・구현 방법의 추출·재현을 목적으로 한 해석
+     ・기타 이와 유사한 행위
+   또한, 본 에셋에 포함된 스크립트를 자신의 월드에 맞추어 개변하는 것(제1조 b)은
+   본 조의 대상이 아닙니다.
+
+8. 면책
+   본 에셋은 「있는 그대로」 제공됩니다. 본 에셋의 이용으로 인하여 발생한 문제나 손해에 대하여,
+   제작자는 책임을 지지 않습니다. VRChat이나 QvPen의 업데이트로 인하여 예고 없이 작동하지 않게 되는 경우가 있습니다.
+
+9. 변경
+   본 약관은 향후 버전에서, 또는 수시로 변경될 수 있습니다. 변경 후의 약관은 배포 페이지와 배포처의 저장소에 게재한 시점부터,
+   이미 입수한 판을 포함하여 모든 판에 적용됩니다. 변경 후에 본 에셋을 이용한 경우에는, 변경 후의 약관에 동의한 것으로 간주합니다.
+   최신 약관은 배포 페이지와 배포처의 저장소(Yakigura/QvPalette의 LICENSE)에서 확인하여 주십시오.

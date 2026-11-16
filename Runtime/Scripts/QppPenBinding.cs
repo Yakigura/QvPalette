@@ -22,6 +22,15 @@ namespace Yakigura.QvPalette
         [SerializeField] private int styledWordCount = 4096;
 
         private uint[] styledBits;
+
+        // 範囲外の inkId（QvPen のローカル線は 2^30 以上）のうち、復元窓口が色を当てた線の印。
+        // ビットでは持てないので、連続する inkId を [from, to] の範囲にまとめて覚える。
+        // 範囲の数が上限を超えたら、それ以上は覚えない（その線は、Observer が現在のペンの色で塗り直す）。
+        private const int MAX_RESTORED_RANGES = 128;
+        private int[] restoredFrom;
+        private int[] restoredTo;
+        private int restoredRangeCount;
+        private bool warnedRestoredOverflow;
         private Gradient runtimeSolidGradient;
         private GradientColorKey[] solidColorKeys;
         private GradientAlphaKey[] solidAlphaKeys;
@@ -127,6 +136,7 @@ namespace Yakigura.QvPalette
             int word = inkId >> 5;
             if (word >= styledBits.Length)
             {
+                if (IsInRestoredRange(inkId)) return true;
                 if (!warnedBitOverflow)
                 {
                     warnedBitOverflow = true;
@@ -143,6 +153,59 @@ namespace Yakigura.QvPalette
             int word = inkId >> 5;
             if (word >= styledBits.Length) return;
             styledBits[word] |= (1u << (inkId & 31));
+        }
+
+        private bool IsInRestoredRange(int inkId)
+        {
+            if (restoredFrom == null) return false;
+            for (int i = restoredRangeCount - 1; i >= 0; i--)
+            {
+                if (inkId >= restoredFrom[i] && inkId <= restoredTo[i]) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// 復元窓口が色を当てた線を、Observer に塗り直させないための印。範囲内の inkId は MarkStyled と同じ。
+        /// 範囲外（ローカル線）は、連続する inkId を範囲にまとめて覚える。覚えきれなければ false。
+        /// </summary>
+        public bool MarkStyledPersistent(int inkId)
+        {
+            if (inkId < 0 || styledBits == null) return false;
+            if ((inkId >> 5) < styledBits.Length)
+            {
+                MarkStyled(inkId);
+                return true;
+            }
+
+            if (restoredFrom == null)
+            {
+                restoredFrom = new int[MAX_RESTORED_RANGES];
+                restoredTo = new int[MAX_RESTORED_RANGES];
+                restoredRangeCount = 0;
+            }
+            if (IsInRestoredRange(inkId)) return true;
+
+            // 直前の範囲のすぐ後ろなら、延ばす（復元は、連続する inkId で描き直されるので、ほとんどここに入る）。
+            int last = restoredRangeCount - 1;
+            if (last >= 0 && inkId == restoredTo[last] + 1)
+            {
+                restoredTo[last] = inkId;
+                return true;
+            }
+            if (restoredRangeCount >= MAX_RESTORED_RANGES)
+            {
+                if (!warnedRestoredOverflow)
+                {
+                    warnedRestoredOverflow = true;
+                    Debug.LogWarning("[QPP] Too many restored ink ranges; later restored lines may be recolored by the observer.");
+                }
+                return false;
+            }
+            restoredFrom[restoredRangeCount] = inkId;
+            restoredTo[restoredRangeCount] = inkId;
+            restoredRangeCount++;
+            return true;
         }
 
         private bool needsResweep;

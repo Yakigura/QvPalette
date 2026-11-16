@@ -15,6 +15,8 @@ namespace Yakigura.QvPalette
         [SerializeField] private Transform knobTransform;
         [SerializeField] private TextMeshPro label;
         [SerializeField] private QppPaletteUI ui;
+        [Tooltip("ワールド内の表示言語。0 = 自動（見る人の VRChat の言語）、1 = 日本語、2 = English、3 = 한국어。")]
+        [SerializeField] private int languageSetting = 0;
 
         [Header("Slider Geometry (relative to panelRoot)")]
         [SerializeField] private Vector2 sliderRangeX = new Vector2(-0.07f, 0.07f);
@@ -31,6 +33,12 @@ namespace Yakigura.QvPalette
             DisableInteractive = true;
         }
 
+        /// <summary>言語が変わったとき、次の UpdateVisual で、文字を書き直させる。</summary>
+        public void RefreshLabel()
+        {
+            shownScale = -1f;
+        }
+
         public void UpdateVisual(float scale)
         {
             if (Mathf.Approximately(scale, shownScale)) return;
@@ -41,7 +49,11 @@ namespace Yakigura.QvPalette
                 pos.x = Mathf.Lerp(sliderRangeX.x, sliderRangeX.y, QppCommon.PenScalePositionOf(scale));
                 knobTransform.localPosition = pos;
             }
-            if (Utilities.IsValid(label)) label.text = QppCommon.PenScaleTextOf(scale);
+            if (Utilities.IsValid(label))
+            {
+                int lang = Utilities.IsValid(ui) ? ui.CurrentLanguage() : QppText.Resolve(languageSetting);
+                label.text = QppCommon.PenScaleTextOf(scale, lang);
+            }
         }
 
         public void OnProbeDrag(float localX)
@@ -51,6 +63,11 @@ namespace Yakigura.QvPalette
         }
 
 #if !COMPILER_UDONSHARP && UNITY_EDITOR
+        public void EditorSetLanguage(int setting)
+        {
+            languageSetting = setting;
+        }
+
         public void EditorSetReferences(Transform knob, TextMeshPro lbl, QppPaletteUI u, Vector2 rangeX, Vector2 center,
             Vector2 size)
         {

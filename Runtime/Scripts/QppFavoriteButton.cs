@@ -78,7 +78,8 @@ namespace Yakigura.QvPalette
             Gradient dedicatedGradient,
             GradientColorKey[] colKeys,
             GradientAlphaKey[] alphaKeys,
-            MaterialPropertyBlock block)
+            MaterialPropertyBlock block,
+            int lang)
         {
             bool empty = !Utilities.IsValid(palette) || !used || styleId < 0 || styleId >= palette.EntryCount;
             if (Utilities.IsValid(emptyFrame) && emptyFrame.activeSelf != empty) emptyFrame.SetActive(empty);
@@ -86,7 +87,7 @@ namespace Yakigura.QvPalette
             {
                 if (Utilities.IsValid(previewLine))
                     previewLine.gameObject.SetActive(false);
-                SetLabel("空");
+                SetLabel(QppText.EmptySlot(lang));
                 return;
             }
 

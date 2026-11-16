@@ -1,9 +1,9 @@
 {
   "name": "com.yakigura.qvpalette",
   "displayName": "QvPalette",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "unity": "2022.3",
-  "description": "QvPen の非公式拡張。ペン 1 本で最大 4096 のインクを使用できるQvPen拡張ツール",
+  "description": "QvPen の非公式拡張。ペン 1 本で最大 4096 のインクを使用できるQvPen拡張ツール / Unofficial QvPen extension: use up to 4096 inks with one pen / QvPen 비공식 확장: 펜 1개로 최대 4096개의 잉크 사용",
   "author": {
     "name": "やきたてぐらふてぃ",
     "url": "https://github.com/Yakigura"
@@ -23,5 +23,5 @@
   "documentationUrl": "https://github.com/Yakigura/QvPalette#readme",
   "changelogUrl": "https://github.com/Yakigura/QvPalette/blob/main/CHANGELOG.md",
   "licensesUrl": "https://github.com/Yakigura/QvPalette/blob/main/LICENSE",
-  "url": "https://github.com/Yakigura/QvPalette/releases/download/1.0.0/com.yakigura.qvpalette-1.0.0.zip"
+  "url": "https://github.com/Yakigura/QvPalette/releases/download/1.0.1/com.yakigura.qvpalette-1.0.1.zip"
 }

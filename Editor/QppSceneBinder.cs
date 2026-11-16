@@ -25,6 +25,10 @@ namespace Yakigura.QvPalette.Editor
         // ペン 1 本で色・太さを 4,096 回まで切り替えられる（8 チャンク × 512 件）。容量を増やすより
         // チャンクを増やすほうが、1 回の送信量（約 4KB）が変わらず影響が小さい。
         public static int TargetChunksPerPen = 8;
+        /// <summary>ワールド内の文字の言語の設定（0 = 自動、1 = 日本語、2 = English、3 = 한국어）。Setup のたびに、QppSetup から読む。</summary>
+        public static int TargetLanguageSetting = 0;
+        /// <summary>Setup が書く文字（実行時に、言語に合わせて書き直される）の言語。自動のときは、編集画面で読める English。</summary>
+        private static int BakedLanguage { get { return TargetLanguageSetting >= QppText.LANG_JA ? TargetLanguageSetting : QppText.LANG_EN; } }
         public static int TargetChunkCapacity = 512;
 
         /// <summary>ペン追従プレビューを描画する最大距離（§8: 一定距離を超えたら描画を止める）。</summary>
@@ -305,6 +309,25 @@ namespace Yakigura.QvPalette.Editor
             throw new InvalidOperationException("UdonSharp compiler assembly not loaded.");
         }
 
+
+        /// <summary>ワールド内の文字の言語の設定を、シーンの部品に書く（Setup を実行し直さなくても、反映される）。</summary>
+        public static void ApplyLanguageSetting(int setting)
+        {
+            TargetLanguageSetting = Mathf.Clamp(setting, QppText.LANG_AUTO, QppText.LANG_KO);
+            foreach (var ui in Object.FindObjectsOfType<QppPaletteUI>(true)) WriteLanguageField(ui);
+            foreach (var slider in Object.FindObjectsOfType<QppPenSizeSlider>(true)) WriteLanguageField(slider);
+            foreach (var stand in Object.FindObjectsOfType<QppToolStand>(true)) WriteLanguageField(stand);
+        }
+
+        private static void WriteLanguageField(Object component)
+        {
+            var so = new SerializedObject(component);
+            var property = so.FindProperty("languageSetting");
+            if (property == null || property.intValue == TargetLanguageSetting) return;
+            property.intValue = TargetLanguageSetting;
+            so.ApplyModifiedProperties();
+            EditorUtility.SetDirty(component);
+        }
 
         public static bool ApplyChunkSettings(int chunksPerPen, int chunkCapacity)
         {
@@ -626,26 +649,50 @@ namespace Yakigura.QvPalette.Editor
             }
             catch (Exception ex)
             {
-                return $"U# プログラムアセット一覧の取得に失敗しました: {ex.Message}\n" +
-                       "同じスクリプトのプログラムアセットが 2 つある可能性があります（上のログを確認してください）。";
+                return QppEditorText.T(
+                    $"U# プログラムアセット一覧の取得に失敗しました: {ex.Message}\n" +
+                    "同じスクリプトのプログラムアセットが 2 つある可能性があります（上のログを確認してください）。",
+                    $"Failed to get the list of U# program assets: {ex.Message}\n" +
+                    "There may be two program assets for the same script (check the log above).",
+                    $"U# 프로그램 에셋 목록을 가져오지 못했습니다: {ex.Message}\n" +
+                    "같은 스크립트의 프로그램 에셋이 2개 있을 수 있습니다(위의 로그를 확인해 주세요).");
             }
 
             if (direct == null)
             {
-                return $"プログラムアセット {expectedPath} が存在しません。\n" +
-                       "Unity のコンパイル完了を待ってから、もう一度実行してください。";
+                return QppEditorText.T(
+                    $"プログラムアセット {expectedPath} が存在しません。\n" +
+                    "Unity のコンパイル完了を待ってから、もう一度実行してください。",
+                    $"The program asset {expectedPath} does not exist.\n" +
+                    "Wait for Unity to finish compiling, then run it again.",
+                    $"프로그램 에셋 {expectedPath}이(가) 없습니다.\n" +
+                    "Unity의 컴파일이 끝날 때까지 기다린 후 다시 실행해 주세요.");
             }
 
             if (direct.SerializedProgramAsset == null)
             {
-                return $"プログラムアセット {expectedPath} はありますが、まだコンパイルされていません。\n" +
-                       "Unity のコンパイル完了を待ってから、もう一度実行してください。";
+                return QppEditorText.T(
+                    $"プログラムアセット {expectedPath} はありますが、まだコンパイルされていません。\n" +
+                    "Unity のコンパイル完了を待ってから、もう一度実行してください。",
+                    $"The program asset {expectedPath} exists but has not been compiled yet.\n" +
+                    "Wait for Unity to finish compiling, then run it again.",
+                    $"프로그램 에셋 {expectedPath}이(가) 있지만 아직 컴파일되지 않았습니다.\n" +
+                    "Unity의 컴파일이 끝날 때까지 기다린 후 다시 실행해 주세요.");
             }
 
-            return $"プログラムアセット {expectedPath} は存在するのに、UdonSharp の一覧" +
-                   $"（{listedCount} 件）から引けません。\n" +
-                   "AssetDatabase のパス（フォルダ名の大文字小文字）が食い違っている状態です。\n" +
-                   "Unity を一度閉じて開き直してから、もう一度 Scan Scene & Rebind を実行してください。";
+            return QppEditorText.T(
+                $"プログラムアセット {expectedPath} は存在するのに、UdonSharp の一覧" +
+                $"（{listedCount} 件）から引けません。\n" +
+                "AssetDatabase のパス（フォルダ名の大文字小文字）が食い違っている状態です。\n" +
+                "Unity を一度閉じて開き直してから、もう一度 Setup を実行してください。",
+                $"The program asset {expectedPath} exists, but it cannot be found in the UdonSharp list " +
+                $"({listedCount} entries).\n" +
+                "The AssetDatabase path (upper/lower case of the folder name) is out of sync.\n" +
+                "Close and reopen Unity, then run Setup again.",
+                $"프로그램 에셋 {expectedPath}이(가) 있는데도 UdonSharp 목록" +
+                $"({listedCount}개)에서 찾을 수 없습니다.\n" +
+                "AssetDatabase 경로(폴더 이름의 대소문자)가 어긋나 있습니다.\n" +
+                "Unity를 한 번 닫았다가 다시 연 후, Setup을 다시 실행해 주세요.");
         }
 
         /// <summary>
@@ -706,7 +753,7 @@ namespace Yakigura.QvPalette.Editor
             {
                 if (!Application.isBatchMode)
                 {
-                    EditorUtility.DisplayDialog("QvPalette", "シーン内に QvPen_PenManager が見つかりませんでした。", "OK");
+                    EditorUtility.DisplayDialog("QvPalette", QppEditorText.T("シーン内に QvPen_PenManager が見つかりませんでした。", "No QvPen_PenManager was found in the scene.", "씬에서 QvPen_PenManager를 찾을 수 없습니다."), "OK");
                 }
                 Debug.LogWarning("[QPP] No QvPen_PenManager found in scene.");
                 return;
@@ -716,7 +763,7 @@ namespace Yakigura.QvPalette.Editor
             {
                 if (!Application.isBatchMode)
                 {
-                    EditorUtility.DisplayDialog("QvPalette", $"検出されたペンの本数 ({penManagers.Length}) が上限 64 本を超えています。", "OK");
+                    EditorUtility.DisplayDialog("QvPalette", QppEditorText.T($"検出されたペンの本数 ({penManagers.Length}) が上限 64 本を超えています。", $"The number of pens found ({penManagers.Length}) exceeds the limit of 64.", $"감지된 펜의 수({penManagers.Length})가 상한인 64개를 초과했습니다."), "OK");
                 }
                 Debug.LogError($"[QPP] Pen count ({penManagers.Length}) exceeds maximum of 64.");
                 return;
@@ -754,6 +801,7 @@ namespace Yakigura.QvPalette.Editor
             var setup = GetOrAddComponent<QppSetup>(setupTr.gameObject);
             // 台帳の容量は、Setup オブジェクトのインスペクターの値を使う（既定は 8 チャンク × 512 件）。
             TargetChunksPerPen = Mathf.Clamp(setup.EditorLedgerChunksPerPen, 1, 32);
+            TargetLanguageSetting = Mathf.Clamp(setup.EditorLanguageSetting, QppText.LANG_AUTO, QppText.LANG_KO);
             int savedCapacity = setup.EditorLedgerChunkCapacity;
             TargetChunkCapacity = (savedCapacity == 128 || savedCapacity == 256 || savedCapacity == 512 || savedCapacity == 1024) ? savedCapacity : 512;
 
@@ -810,6 +858,7 @@ namespace Yakigura.QvPalette.Editor
             Debug.Log($"[QPP] Preview migration: removed {removedLegacyPreviews} legacy preview objects.");
 
             int penCount = penManagers.Length;
+            int[] initialStyles = InitialStylesOf(penManagers, palette.EntryCount);
             var pens = new QvPen_Pen[penCount];
             var bindings = new QppPenBinding[penCount];
             var ledgers = new QppPenLedger[penCount];
@@ -942,6 +991,7 @@ namespace Yakigura.QvPalette.Editor
                 binding.EditorSetReferences(pm, pen, penTip, trailRendererGO, penPickup, palette, slot);
                 penPreview.EditorSetReferences(sharedPreview, binding, palette);
                 ledger.EditorSetReferences(chunkList.ToArray(), penState, binding, slot, QppCommon.DEFAULT_WIDTH_INDEX);
+                ledger.EditorDefaultStyleId = initialStyles[slot];
 
                 states[slot] = penState;
                 pickupListeners[slot] = pickupListener;
@@ -1016,6 +1066,13 @@ namespace Yakigura.QvPalette.Editor
                 var paletteTool = CreatePaletteTool(toolsContainer, mainRootTr, mainUi, mainProbe, toolSpawnPos, toolSpawnRot);
                 mainUi.EditorSetPaletteTool(paletteTool);
                 CreateToolStand(toolsContainer, paletteTool);
+                var toolStandComponent = toolsContainer.GetComponentInChildren<QppToolStand>(true);
+                if (toolStandComponent != null)
+                {
+                    toolStandComponent.EditorSetUi(mainUi);
+                    mainUi.EditorSetToolStand(toolStandComponent);
+                    EditorUtility.SetDirty(toolStandComponent);
+                }
             }
 
             // 3.6 ペン側からパネル群への参照を配線する
@@ -1037,6 +1094,7 @@ namespace Yakigura.QvPalette.Editor
 
             // 4. Wire Setup and Observer
             setup.EditorSetReferences(penManagers, pens, bindings, states, palette, 0, QppCommon.DEFAULT_WIDTH_INDEX);
+            setup.EditorInitialStyleIds = initialStyles;
             favorites.EditorSetReferences(palette, "QPP_FAV_", true);
             observer.EditorSetReferences(
                 allPools.ToArray(),
@@ -1051,14 +1109,21 @@ namespace Yakigura.QvPalette.Editor
                 penPreviews,
                 QppCommon.DEFAULT_WIDTH_INDEX);
 
-            // 5. Apply default style (style 0) to all penManagers (§3.5)
+            // 絵を保存・復元する仕組み（別のツール）から呼ぶ窓口。利用側は UdonBehaviour 参照 1 本で
+            // つなぐので、ここで必ず 1 つ置いて、台帳と観測役への参照を入れておく。
+            Transform restorePortTr = GetOrCreateChild(qppRoot.transform, "RestorePort");
+            var restorePort = GetOrAddComponent<QppRestoreStylePort>(restorePortTr.gameObject);
+            restorePort.EditorSetReferences(setup, ledgers, observer);
+            EditorUtility.SetDirty(restorePort);
+
+            // 5. 各 penManager に、そのペンの最初のインク（セットの中の順番）の Material を入れる
             for (int i = 0; i < penCount; i++)
             {
                 var pm = penManagers[i];
                 if (pm != null)
                 {
-                    pm.pcInkMaterial = palette.MaterialOf(0);
-                    pm.questInkMaterial = palette.MaterialOf(0);
+                    pm.pcInkMaterial = palette.MaterialOf(initialStyles[i]);
+                    pm.questInkMaterial = palette.MaterialOf(initialStyles[i]);
                     pm.inkWidth = QppCommon.WidthOf(QppCommon.DEFAULT_WIDTH_INDEX);
                     EditorUtility.SetDirty(pm);
                 }
@@ -1080,7 +1145,10 @@ namespace Yakigura.QvPalette.Editor
             Debug.Log($"[QPP] Scan Scene & Rebind completed. Bound {penCount} pens with {TargetChunksPerPen} chunks each ({allPools.Count} ink pools total).");
             if (!Application.isBatchMode)
             {
-                EditorUtility.DisplayDialog("QvPalette", $"セットアップが完了しました。\n\nペン: {penCount} 本\nインク: {palette.EntryCount} 個\nチャンク: {TargetChunksPerPen} / ペン\n\nシーンを保存してください（Ctrl+S）。", "OK");
+                EditorUtility.DisplayDialog("QvPalette", QppEditorText.T(
+                    $"セットアップが完了しました。\n\nペン: {penCount} 本\nインク: {palette.EntryCount} 個\nチャンク: {TargetChunksPerPen} / ペン\n\nシーンを保存してください（Ctrl+S）。",
+                    $"Setup is complete.\n\nPens: {penCount}\nInks: {palette.EntryCount}\nChunks: {TargetChunksPerPen} per pen\n\nPlease save the scene (Ctrl+S).",
+                    $"설정이 완료되었습니다.\n\n펜: {penCount}개\n잉크: {palette.EntryCount}개\n청크: 펜당 {TargetChunksPerPen}개\n\n씬을 저장해 주세요(Ctrl+S)."), "OK");
             }
         }
 
@@ -1133,6 +1201,25 @@ namespace Yakigura.QvPalette.Editor
                 lengthAxis = size.x >= size.y && size.x >= size.z ? 0 : (size.y >= size.z ? 1 : 2);
             }
             return best;
+        }
+
+        /// <summary>
+        /// ペンごとの最初のインク。同じ親の下に並ぶペンを 1 つのセットとし、並び順（階層の順）に 0, 1, 2…を割り当てる。
+        /// インクの数より多いペンは、最後のインクにする。インクが 0 個なら 0。
+        /// </summary>
+        public static int[] InitialStylesOf(QvPen_PenManager[] penManagers, int inkCount)
+        {
+            var result = new int[penManagers.Length];
+            var counts = new Dictionary<Transform, int>();
+            for (int i = 0; i < penManagers.Length; i++)
+            {
+                Transform parent = penManagers[i] != null ? penManagers[i].transform.parent : null;
+                int index;
+                counts.TryGetValue(parent ?? penManagers[i].transform, out index);
+                counts[parent ?? penManagers[i].transform] = index + 1;
+                result[i] = Mathf.Max(0, Mathf.Min(index, inkCount - 1));
+            }
+            return result;
         }
 
         private static QvPen_PenManager[] FindAllPenManagersInScene()
@@ -1340,7 +1427,7 @@ namespace Yakigura.QvPalette.Editor
             favTitleTmp.fontSize = 18;
             favTitleTmp.enableWordWrapping = false;
             favTitleTmp.alignment = TextAlignmentOptions.Center;
-            favTitleTmp.text = "お気に入り（長押しで登録）";
+            favTitleTmp.text = QppText.FavoritesTitle(BakedLanguage);
             dimTexts.Add(favTitleTmp);
             Material favFrameMat = GetOrCreateUnlitMaterial("Qpp_FavoriteFrame", new Color(0.6f, 0.6f, 0.65f, 1f));
 
@@ -1400,7 +1487,7 @@ namespace Yakigura.QvPalette.Editor
                 if (favTmp == null) favTmp = favTxtTr.gameObject.AddComponent<TextMeshPro>();
                 favTmp.fontSize = 18;
                 favTmp.alignment = TextAlignmentOptions.Center;
-                favTmp.text = "空";
+                favTmp.text = QppText.EmptySlot(BakedLanguage);
                 dimTexts.Add(favTmp);
 
                 // 未登録のときに出す枠
@@ -1596,12 +1683,13 @@ namespace Yakigura.QvPalette.Editor
             penTmp.fontSize = 18;
             penTmp.enableWordWrapping = false;
             penTmp.alignment = TextAlignmentOptions.Center;
-            penTmp.text = QppCommon.PenScaleTextOf(1f);
+            penTmp.text = QppCommon.PenScaleTextOf(1f, BakedLanguage);
             dimTexts.Add(penTmp);
 
             var pss = GetOrAddComponent<QppPenSizeSlider>(penSliderTr.gameObject);
             pss.EditorSetReferences(penKnobTr, penTmp, ui, new Vector2(-0.062f, 0.062f),
                 new Vector2(LeftColumnX + penSliderOffsetX, PenSizeRowY), new Vector2(0.18f, 0.04f));
+            pss.EditorSetLanguage(TargetLanguageSetting);
 
             // 太さの mm 表記（§8: 太さは見た目で判別しにくいため数値を併記する）
             Transform widthTextTr = GetOrCreateChild(displayRoot, "WidthText");
@@ -1612,7 +1700,7 @@ namespace Yakigura.QvPalette.Editor
             widthTmp.fontSize = 24;
             widthTmp.alignment = TextAlignmentOptions.Center;
             widthTmp.enableWordWrapping = false;
-            widthTmp.text = "Width " + QppCommon.MillimetersTextOf(QppCommon.DEFAULT_WIDTH_INDEX);
+            widthTmp.text = QppText.WidthLabel(BakedLanguage) + " " + QppCommon.MillimetersTextOf(QppCommon.DEFAULT_WIDTH_INDEX);
             dimTexts.Add(widthTmp);
 
             // Page text
@@ -1649,7 +1737,7 @@ namespace Yakigura.QvPalette.Editor
             var busyTmp = busyTr.GetComponent<TextMeshPro>();
             if (busyTmp == null) busyTmp = busyTr.gameObject.AddComponent<TextMeshPro>();
             busyTmp.fontSize = 20;
-            busyTmp.text = "SYNC...";
+            busyTmp.text = QppText.Syncing(BakedLanguage);
             busyTmp.color = Color.yellow;
             GameObject busyGO = busyTmp.gameObject;
             busyGO.SetActive(false);
@@ -1660,7 +1748,7 @@ namespace Yakigura.QvPalette.Editor
             var roTmp = roTr.GetComponent<TextMeshPro>();
             if (roTmp == null) roTmp = roTr.gameObject.AddComponent<TextMeshPro>();
             roTmp.fontSize = 20;
-            roTmp.text = "IN USE";
+            roTmp.text = QppText.InUse(BakedLanguage);
             roTmp.color = Color.red;
             GameObject roGO = roTmp.gameObject;
             roGO.SetActive(false);
@@ -1699,7 +1787,7 @@ namespace Yakigura.QvPalette.Editor
             fullTmp.fontSize = 20;
             fullTmp.alignment = TextAlignmentOptions.Center;
             fullTmp.enableWordWrapping = false;
-            fullTmp.text = "FULL - no more style changes";
+            fullTmp.text = QppText.Full(BakedLanguage);
             fullTmp.color = new Color(1f, 0.55f, 0.1f);
             GameObject fullGO = fullTmp.gameObject;
             fullGO.SetActive(false);
@@ -1829,7 +1917,7 @@ namespace Yakigura.QvPalette.Editor
             tagTitleTmp.fontSize = 18;
             tagTitleTmp.enableWordWrapping = false;
             tagTitleTmp.alignment = TextAlignmentOptions.Center;
-            tagTitleTmp.text = "タグで絞り込み";
+            tagTitleTmp.text = QppText.TagTitle(BakedLanguage);
             dimTexts.Add(tagTitleTmp);
             Material tagPlateMat = GetOrCreateUnlitMaterial("Qpp_TagButton", new Color(0.25f, 0.27f, 0.33f, 1f));
 
@@ -1855,7 +1943,7 @@ namespace Yakigura.QvPalette.Editor
                 lblTmp.fontSize = 20;
                 lblTmp.alignment = TextAlignmentOptions.Center;
                 lblTmp.enableWordWrapping = false;
-                lblTmp.text = i == 0 ? "すべて" : $"Tag {i}";
+                lblTmp.text = i == 0 ? QppText.TagAll(BakedLanguage) : $"Tag {i}";
                 lblTmp.color = new Color(0.95f, 0.95f, 1f);
                 dimTexts.Add(lblTmp);
 
@@ -1875,9 +1963,16 @@ namespace Yakigura.QvPalette.Editor
                 tagPlateMat, touchColliders, dimTexts, controlButtonsList);
             QppControlButton tagPageButton = CreatePageButton(
                 displayRoot, "Btn_TagPage", ui, "_NextTagPage",
-                new Vector2(TagColumnX + TagColumnStepX * 0.5f, -0.15f), new Vector2(0.154f, 0.036f), "タグ 1/3 →",
+                new Vector2(TagColumnX + TagColumnStepX * 0.5f, -0.15f), new Vector2(0.154f, 0.036f), QppText.TagPage(BakedLanguage, 1, 3),
                 tagPlateMat, touchColliders, dimTexts, controlButtonsList);
             ui.EditorEnsureWidthPresets();
+            // 言語ボタン（タグのページ切り替えの下）。押した人だけに効く。
+            QppControlButton languageButton = CreatePageButton(
+                displayRoot, "Btn_Language", ui, "_NextLanguage",
+                new Vector2(TagColumnX + TagColumnStepX * 0.5f, -0.2f), new Vector2(0.154f, 0.03f),
+                QppText.LanguageName(TargetLanguageSetting, BakedLanguage),
+                tagPlateMat, touchColliders, dimTexts, controlButtonsList);
+            ui.EditorSetLanguageButton(languageButton);
 
             // Remove the obsolete angle button when rebinding an existing panel.
             Transform obsoleteTiltButton = displayRoot.Find("Btn_Tilt");
@@ -1911,6 +2006,7 @@ namespace Yakigura.QvPalette.Editor
                 openEffect,
                 presetPageButton,
                 tagPageButton);
+            ui.EditorSetLanguage(TargetLanguageSetting, favTitleTmp, tagTitleTmp);
 
             // Default hide the panel contents until the local player picks up the pen.
             // 入れ物（Panel_{slot}）はアクティブのまま残す。
@@ -2023,8 +2119,8 @@ namespace Yakigura.QvPalette.Editor
             pickup.version = VRCPickup.Version.Version_1_1;
             pickup.AutoHold = VRCPickup.AutoHoldMode.No;
             pickup.allowManipulationWhenEquipped = true;
-            pickup.UseText = "Trigger (VR) / P (Desktop): Toggle";
-            pickup.InteractionText = "Hold to move Palette";
+            pickup.UseText = QppText.ToolToggle(BakedLanguage);
+            pickup.InteractionText = QppText.ToolGrab(BakedLanguage);
             // 掴める距離を縮め、パネル操作中にペンのレイがツールに向かうのを減らす（既定 2）。
             pickup.proximity = 0.5f;
 
@@ -2299,10 +2395,11 @@ namespace Yakigura.QvPalette.Editor
             tmp.fontSize = 18;
             tmp.enableWordWrapping = false;
             tmp.alignment = TextAlignmentOptions.Center;
-            tmp.text = "長押しでツールを戻す";
+            tmp.text = QppText.StandInteraction(BakedLanguage);
 
             var stand = GetOrAddComponent<QppToolStand>(standTr.gameObject);
             stand.EditorSetReferences(tool, fillTr, tmp);
+            stand.EditorSetLanguage(TargetLanguageSetting);
             EditorUtility.SetDirty(stand);
         }
 
@@ -2533,7 +2630,10 @@ namespace Yakigura.QvPalette.Editor
                     if (!TryResolveProgramAsset(typeof(T), out programAsset))
                     {
                         string message =
-                            $"{typeof(T).Name} の U# プログラムアセットが見つかりません。\n\n" +
+                            QppEditorText.T(
+                                $"{typeof(T).Name} の U# プログラムアセットが見つかりません。",
+                                $"The U# program asset for {typeof(T).Name} was not found.",
+                                $"{typeof(T).Name}의 U# 프로그램 에셋을 찾을 수 없습니다.") + "\n\n" +
                             DescribeProgramAssetFailure(typeof(T));
 
                         Debug.LogError($"[QPP] {message}");

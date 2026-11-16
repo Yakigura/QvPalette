@@ -31,6 +31,12 @@ namespace Yakigura.QvPalette
 
         private int[] cursor;
         private int[] sweepCursor;
+        private int[] cursorGrandchild;
+        private int[] sweepGrandchild;
+        // プールごとに記憶できるコンテナは 4 個まで。5 個目以降の中身の増減は検出できない。
+        private const int MaxContainersPerPool = 4;
+        private Transform[] containers;
+        private int[] containerChildCounts;
         private int[] lastChildCount;
         private bool[] sweeping;
         private bool[] sweepAgain;
@@ -57,6 +63,10 @@ namespace Yakigura.QvPalette
             int n = (pools != null) ? pools.Length : 0;
             cursor = new int[n];
             sweepCursor = new int[n];
+            cursorGrandchild = new int[n];
+            sweepGrandchild = new int[n];
+            containers = new Transform[n * MaxContainersPerPool];
+            containerChildCounts = new int[n * MaxContainersPerPool];
             lastChildCount = new int[n];
             sweeping = new bool[n];
             sweepAgain = new bool[n];
@@ -96,8 +106,23 @@ namespace Yakigura.QvPalette
             RequestResweepForSlot(penSlot, fromInkId);
         }
 
+        /// <summary>
+        /// 走査用の配列を確かめる。Start を通らない経路（テストや、参照を後から入れた場合）でも
+        /// null のまま触らないようにする。長さが合っているときは何も作り直さない。
+        /// </summary>
+        private void EnsureScanArrays()
+        {
+            int n = (pools != null) ? pools.Length : 0;
+            if (cursorGrandchild == null || cursorGrandchild.Length != n) cursorGrandchild = new int[n];
+            if (sweepGrandchild == null || sweepGrandchild.Length != n) sweepGrandchild = new int[n];
+            int m = n * MaxContainersPerPool;
+            if (containers == null || containers.Length != m) containers = new Transform[m];
+            if (containerChildCounts == null || containerChildCounts.Length != m) containerChildCounts = new int[m];
+        }
+
         private void RequestResweepForSlot(int penSlot, int fromInkId)
         {
+            EnsureScanArrays();
             if (pools == null || sweepCursor == null) return;
             for (int i = 0; i < pools.Length; i++)
             {
@@ -106,7 +131,7 @@ namespace Yakigura.QvPalette
                 int count = Utilities.IsValid(pools[i]) ? pools[i].childCount : 0;
                 if (!sweeping[i] && cursor != null && cursor[i] >= count &&
                     maxObservedInkId != null && poolFromInkId > maxObservedInkId[i]) continue;
-                if (sweeping[i] && sweepCursor[i] > 0 && pendingResweep != null)
+                if (sweeping[i] && (sweepCursor[i] > 0 || sweepGrandchild[i] > 0) && pendingResweep != null)
                 {
                     // Let the current pass finish; inks after the cursor already read the new ledger.
                     pendingFromInkId[i] = pendingResweep[i] ? Mathf.Min(pendingFromInkId[i], poolFromInkId) : poolFromInkId;
@@ -116,6 +141,7 @@ namespace Yakigura.QvPalette
                 if (sweeping[i] && sweepFromInkId != null)
                     poolFromInkId = Mathf.Min(poolFromInkId, sweepFromInkId[i]);
                 sweepCursor[i] = 0;
+                sweepGrandchild[i] = 0;
                 sweeping[i] = true;
                 if (sweepAgain != null) sweepAgain[i] = false;
                 sweepRound[i] = 0;
@@ -149,6 +175,14 @@ namespace Yakigura.QvPalette
                             {
                                 int id = GetInkIdFromGO(child.gameObject);
                                 if (id > maxId) maxId = id;
+                                if (!Utilities.IsValid(child.GetComponent<LineRenderer>()))
+                                {
+                                    for (int g = 0; g < child.childCount; g++)
+                                    {
+                                        id = GetInkIdFromGO(child.GetChild(g).gameObject);
+                                        if (id > maxId) maxId = id;
+                                    }
+                                }
                             }
                         }
                     }
@@ -225,6 +259,7 @@ namespace Yakigura.QvPalette
 
             // 2. Ink Observer pool loops
             if (pools == null) return;
+            EnsureScanArrays();
 
             for (int i = 0; i < pools.Length; i++)
             {
@@ -244,6 +279,8 @@ namespace Yakigura.QvPalette
                     }
                 }
 
+                // 子が増えただけ（新しい線）では、全体を走査し直さない。減った（消された）ときだけ。
+                // 入れ物（線をまとめるグループ）が足されたときは、末尾の inkId が増えないので、下の判定で拾える。
                 if (count < lastChildCount[i])
                 {
                     structureChanged = true;
@@ -260,10 +297,39 @@ namespace Yakigura.QvPalette
                     lastTailValid[i] = true;
                 }
 
+                int containerStart = i * MaxContainersPerPool;
+                for (int c = 0; c < MaxContainersPerPool; c++)
+                {
+                    int index = containerStart + c;
+                    Transform container = containers[index];
+                    if (!Utilities.IsValid(container))
+                    {
+                        containers[index] = null;
+                        continue;
+                    }
+                    if (container.parent != pool)
+                    {
+                        containers[index] = null;
+                        structureChanged = true;
+                        continue;
+                    }
+                    int containerCount = container.childCount;
+                    if (containerCount != containerChildCounts[index])
+                    {
+                        containerChildCounts[index] = containerCount;
+                        structureChanged = true;
+                    }
+                }
+
                 if (structureChanged)
                 {
-                    if (cursor[i] > count) cursor[i] = count;
+                    if (cursor[i] > count)
+                    {
+                        cursor[i] = count;
+                        cursorGrandchild[i] = 0;
+                    }
                     sweepCursor[i] = 0;
+                    sweepGrandchild[i] = 0;
                     sweeping[i] = true;
                     sweepRound[i] = 0;
                     if (sweepFromInkId != null) sweepFromInkId[i] = 0;
@@ -279,25 +345,27 @@ namespace Yakigura.QvPalette
 
                 while (cursor[i] < count && budget > 0)
                 {
-                    GameObject inkGO = pool.GetChild(cursor[i]).gameObject;
+                    GameObject inkGO = NextScanObject(pool, i, false);
+                    budget--;
+                    if (!Utilities.IsValid(inkGO)) continue;
                     bool resolved = ApplyStyleToInk(inkGO, penSlot, sweepRound[i], i);
                     if (!resolved)
                     {
                         sweeping[i] = true;
                     }
-                    cursor[i]++;
-                    budget--;
                 }
 
                 // Resweep loop
-                bool ledgerReady = isNetworkSettled && (ledgers != null && penSlot < ledgers.Length && Utilities.IsValid(ledgers[penSlot]) && ledgers[penSlot].IsDelivered);
+                bool ledgerReady = isNetworkSettled && (ledgers != null && penSlot >= 0 && penSlot < ledgers.Length && Utilities.IsValid(ledgers[penSlot]) && ledgers[penSlot].IsDelivered);
                 if (ledgerReady && sweeping[i] && count > 0)
                 {
                     int scanBudget = 64;
                     int styleBudget = 8;
                     while (scanBudget > 0 && styleBudget > 0 && sweepCursor[i] < count)
                     {
-                        GameObject inkGO = pool.GetChild(sweepCursor[i]).gameObject;
+                        GameObject inkGO = NextScanObject(pool, i, true);
+                        scanBudget--;
+                        if (!Utilities.IsValid(inkGO)) continue;
                         int inkId = GetInkIdFromGO(inkGO);
                         if (inkId >= (sweepFromInkId != null ? sweepFromInkId[i] : 0))
                         {
@@ -305,13 +373,12 @@ namespace Yakigura.QvPalette
                             if (!res) sweepAgain[i] = true;
                             styleBudget--;
                         }
-                        sweepCursor[i]++;
-                        scanBudget--;
                     }
 
                     if (sweepCursor[i] >= count)
                     {
                         sweepCursor[i] = 0;
+                        sweepGrandchild[i] = 0;
                         sweepRound[i]++;
                         if (pendingResweep != null && pendingResweep[i])
                         {
@@ -337,6 +404,64 @@ namespace Yakigura.QvPalette
                 // Unconditional update of lastChildCount (§3.4 Item 0 & 6)
                 lastChildCount[i] = count;
             }
+        }
+
+        // Each call consumes one scan unit, including entering/leaving a container.
+        private GameObject NextScanObject(Transform pool, int poolIndex, bool isSweep)
+        {
+            int childIndex = isSweep ? sweepCursor[poolIndex] : cursor[poolIndex];
+            int grandchildIndex = isSweep ? sweepGrandchild[poolIndex] : cursorGrandchild[poolIndex];
+            Transform child = pool.GetChild(childIndex);
+            GameObject result = null;
+            if (Utilities.IsValid(child.GetComponent<LineRenderer>()))
+            {
+                result = child.gameObject;
+                childIndex++;
+                grandchildIndex = 0;
+            }
+            else
+            {
+                int containerStart = poolIndex * MaxContainersPerPool;
+                int emptyIndex = -1;
+                bool found = false;
+                for (int c = 0; c < MaxContainersPerPool; c++)
+                {
+                    int index = containerStart + c;
+                    if (containers[index] == child)
+                    {
+                        found = true;
+                        break;
+                    }
+                    if (emptyIndex < 0 && !Utilities.IsValid(containers[index])) emptyIndex = index;
+                }
+                if (!found && emptyIndex >= 0)
+                {
+                    containers[emptyIndex] = child;
+                    containerChildCounts[emptyIndex] = child.childCount;
+                    sweeping[poolIndex] = true;
+                }
+                if (grandchildIndex < child.childCount)
+                {
+                    result = child.GetChild(grandchildIndex).gameObject;
+                    grandchildIndex++;
+                }
+                else
+                {
+                    childIndex++;
+                    grandchildIndex = 0;
+                }
+            }
+            if (isSweep)
+            {
+                sweepCursor[poolIndex] = childIndex;
+                sweepGrandchild[poolIndex] = grandchildIndex;
+            }
+            else
+            {
+                cursor[poolIndex] = childIndex;
+                cursorGrandchild[poolIndex] = grandchildIndex;
+            }
+            return result;
         }
 
         private bool ApplyStyleToInk(GameObject inkGO, int penSlot, int round, int poolIndex)
@@ -422,54 +547,7 @@ namespace Yakigura.QvPalette
             if (Utilities.IsValid(line))
             {
                 if (hideUntilResolved) line.enabled = true;
-
-                if (Utilities.IsValid(palette))
-                {
-                    line.sharedMaterial = palette.MaterialOf(styleId);
-
-                    if (palette.HasGradient(styleId))
-                    {
-                        var grad = palette.GradientOf(styleId);
-                        if (grad != null) line.colorGradient = grad;
-                    }
-                    else
-                    {
-                        Color c = palette.ColorOf(styleId);
-                        if (solidColorKeys == null)
-                        {
-                            runtimeSolidGradient = new Gradient();
-                            solidColorKeys = new GradientColorKey[2];
-                            solidAlphaKeys = new GradientAlphaKey[2];
-                            solidAlphaKeys[0] = new GradientAlphaKey(1f, 0f);
-                            solidAlphaKeys[1] = new GradientAlphaKey(1f, 1f);
-                        }
-                        solidColorKeys[0] = new GradientColorKey(c, 0f);
-                        solidColorKeys[1] = new GradientColorKey(c, 1f);
-                        runtimeSolidGradient.SetKeys(solidColorKeys, solidAlphaKeys);
-                        line.colorGradient = runtimeSolidGradient;
-                    }
-
-                    float w = palette.WidthOf(widthIndex);
-                    bool isRounded = palette.UseRoundedTrail(styleId);
-                    line.widthMultiplier = isRounded ? 0f : w;
-
-                    propertyBlock.Clear();
-                    line.GetPropertyBlock(propertyBlock);
-                    propertyBlock.SetFloat("_Width", w);
-                    palette.ApplyOutline(propertyBlock, styleId, w);
-                    line.SetPropertyBlock(propertyBlock);
-
-                    if (rebakeCollider)
-                    {
-                        var col = inkGO.GetComponent<MeshCollider>();
-                        if (Utilities.IsValid(col))
-                        {
-                            Mesh m = new Mesh();
-                            line.BakeMesh(m, true);
-                            col.sharedMesh = m;
-                        }
-                    }
-                }
+                ApplyStyleToLine(line, styleId, widthIndex);
             }
 
             if (fromLedger)
@@ -510,6 +588,63 @@ namespace Yakigura.QvPalette
                 }
             }
             return resolved;
+        }
+
+        public bool ApplyStyleToLineForRestore(LineRenderer line, int styleId, int widthIndex)
+        {
+            if (!ApplyStyleToLine(line, styleId, widthIndex)) return false;
+            if (!Utilities.IsValid(setup) || bindings == null) return true;
+            if (!QvPenUtilities.TryGetIdFromInk(line.gameObject, out var penIdV, out var inkIdV, out var _own)) return true;
+            int penSlot = setup.SlotOf(QvPenUtilities.Vector3ToInt32(penIdV));
+            if (penSlot >= 0 && penSlot < bindings.Length && Utilities.IsValid(bindings[penSlot]))
+                bindings[penSlot].MarkStyledPersistent(QvPenUtilities.Vector3ToInt32(inkIdV));
+            return true;
+        }
+
+        public bool ApplyStyleToLine(LineRenderer line, int styleId, int widthIndex)
+        {
+            if (!Utilities.IsValid(line) || !Utilities.IsValid(palette)) return false;
+            line.sharedMaterial = palette.MaterialOf(styleId);
+            if (palette.HasGradient(styleId))
+            {
+                var grad = palette.GradientOf(styleId);
+                if (grad != null) line.colorGradient = grad;
+            }
+            else
+            {
+                Color c = palette.ColorOf(styleId);
+                if (solidColorKeys == null)
+                {
+                    runtimeSolidGradient = new Gradient();
+                    solidColorKeys = new GradientColorKey[2];
+                    solidAlphaKeys = new GradientAlphaKey[2];
+                    solidAlphaKeys[0] = new GradientAlphaKey(1f, 0f);
+                    solidAlphaKeys[1] = new GradientAlphaKey(1f, 1f);
+                }
+                solidColorKeys[0] = new GradientColorKey(c, 0f);
+                solidColorKeys[1] = new GradientColorKey(c, 1f);
+                runtimeSolidGradient.SetKeys(solidColorKeys, solidAlphaKeys);
+                line.colorGradient = runtimeSolidGradient;
+            }
+            float w = palette.WidthOf(widthIndex);
+            line.widthMultiplier = palette.UseRoundedTrail(styleId) ? 0f : w;
+            if (propertyBlock == null) propertyBlock = new MaterialPropertyBlock();
+            propertyBlock.Clear();
+            line.GetPropertyBlock(propertyBlock);
+            propertyBlock.SetFloat("_Width", w);
+            palette.ApplyOutline(propertyBlock, styleId, w);
+            line.SetPropertyBlock(propertyBlock);
+            if (rebakeCollider)
+            {
+                var col = line.gameObject.GetComponent<MeshCollider>();
+                if (Utilities.IsValid(col))
+                {
+                    Mesh m = new Mesh();
+                    line.BakeMesh(m, true);
+                    col.sharedMesh = m;
+                }
+            }
+            return true;
         }
 
 #if !COMPILER_UDONSHARP && UNITY_EDITOR

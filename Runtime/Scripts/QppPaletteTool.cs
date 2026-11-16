@@ -71,12 +71,23 @@ namespace Yakigura.QvPalette
         public bool IsPanelOpen => isPanelOpen;
         public bool IsHeld => isHeld;
 
+        /// <summary>ツールにカーソルを合わせたときの文字と、開閉の操作の説明を、いまの言語で書く。</summary>
+        public void RefreshLanguage()
+        {
+            if (!Utilities.IsValid(pickup)) pickup = GetComponent<VRCPickup>();
+            if (!Utilities.IsValid(pickup)) return;
+            int lang = Utilities.IsValid(ui) ? ui.CurrentLanguage() : QppText.Resolve(QppText.LANG_AUTO);
+            pickup.InteractionText = QppText.ToolGrab(lang);
+            pickup.UseText = QppText.ToolToggle(lang);
+        }
+
         private void Start()
         {
             rb = GetComponent<Rigidbody>();
             pickup = GetComponent<VRCPickup>();
             // Apply to existing bound scenes as well as newly generated tools.
             if (Utilities.IsValid(pickup)) pickup.AutoHold = VRCPickup.AutoHoldMode.No;
+            RefreshLanguage();
 
             // シーン上で置き直された姿勢を初期姿勢とする（バインド時の値が古くても、
             // 「ツールの上」の基準と [戻す] の戻り先が実際の配置からずれない）。

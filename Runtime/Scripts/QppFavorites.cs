@@ -28,6 +28,19 @@ namespace Yakigura.QvPalette
 
         // ペンの大きさ（個人の好み）。未設定（< 0）の間はアバターの目の高さから決める。
         private const string PenScaleKey = "PEN_SCALE";
+        // パネルの言語ボタンで選んだ言語（個人の好み）。未設定（< 0）の間は、ワールド制作者の既定を使う。
+        private const string LanguageKey = "LANG";
+        private int languageChoice = -1;
+        public int LanguageChoice => languageChoice;
+
+        /// <summary>言語を選ぶ（0 = 自動、1 = 日本語、2 = English、3 = 한국어）。Persistence が有効なら、覚えておく。</summary>
+        public void _SetLanguage(int setting)
+        {
+            if (setting < QppText.LANG_AUTO || setting > QppText.LANG_KO) return;
+            languageChoice = setting;
+            if (!usePersistence || !Utilities.IsValid(Networking.LocalPlayer)) return;
+            PlayerData.SetInt(keyPrefix + LanguageKey, setting);
+        }
         private float penScale = -1f;
 
         public int SlotCount => SLOT_COUNT;
@@ -94,6 +107,11 @@ namespace Yakigura.QvPalette
             float savedScale;
             if (PlayerData.TryGetFloat(localPlayer, keyPrefix + PenScaleKey, out savedScale) && savedScale > 0f)
                 penScale = QppCommon.ClampPenScale(savedScale);
+
+            int savedLanguage;
+            if (PlayerData.TryGetInt(localPlayer, keyPrefix + LanguageKey, out savedLanguage) &&
+                savedLanguage >= QppText.LANG_AUTO && savedLanguage <= QppText.LANG_KO)
+                languageChoice = savedLanguage;
 
             restored = true;
         }
